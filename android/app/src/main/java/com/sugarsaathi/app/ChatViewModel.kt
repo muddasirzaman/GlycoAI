@@ -13,6 +13,7 @@ data class ChatUiState(
     val errorMessage: String? = null
 )
 
+
 class ChatViewModel : ViewModel() {
 
     private val _uiState = MutableStateFlow(ChatUiState())
@@ -20,8 +21,15 @@ class ChatViewModel : ViewModel() {
 
     private var historyRepo: ChatHistoryRepository? = null
 
+    private var profileRepo: ProfileRepository? = null
     fun initHistory(context: Context) {
         historyRepo = ChatHistoryRepository(context)
+
+
+    }
+
+    fun initProfileRepo(context: Context) {
+        profileRepo = ProfileRepository(context)
     }
 
     fun saveCurrentSession() {
@@ -31,9 +39,36 @@ class ChatViewModel : ViewModel() {
         }
     }
 
+    fun extractAndSaveFacts(profile: UserProfileData) {
+        val messages = _uiState.value.messages
+        if (messages.size < 2) return
+
+        viewModelScope.launch {
+            try {
+                val conversation = messages.map {
+                    mapOf("role" to it.role, "content" to it.content)
+                }
+
+                val result = NetworkModule.apiService.extractFacts(
+                    ExtractRequest(
+                        conversation = conversation,
+                        existing_facts = profile.knownFacts
+                    )
+                )
+
+                profileRepo?.saveFacts(result.facts)
+
+            } catch (e: Exception) {
+                // Extraction is best-effort; never disrupt the user
+                println("Fact extraction failed: ${e.message}")
+            }
+        }
+    }
+
     fun sendMessage(
         userText: String,
         profile: UserProfileData,
+        glucoseSummary: String? = null,
         imageBase64: String? = null,
         imageMimeType: String? = null,
         documentBase64: String? = null,
@@ -58,14 +93,29 @@ class ChatViewModel : ViewModel() {
                 }
 
                 val profileData = ProfileData(
+
                     name = profile.name,
                     age = profile.age,
+                    sex = profile.sex,
+                    country = profile.country,
                     diabetes_type = profile.diabetesType,
-                    hba1c = null,
+                    diagnosis_year = profile.diagnosisYear,
+                    insulin_type = profile.insulinType,
                     medications = profile.medications,
-                    complications = emptyList(),
+                    glucose_monitoring = profile.glucoseMonitoring,
+                    severe_hypoglycemia = profile.severeHypoglycemia,
+                    other_conditions = profile.otherConditions,
+                    hba1c = profile.hba1c,
+                    complications = profile.complications,
                     language = profile.language,
-                    response_style = "simple"
+                    response_style = profile.responseStyle,
+                    glucose_unit = profile.glucoseUnit,
+                    known_facts = profile.knownFacts,
+                    weight_kg = profile.weightKg,
+                    height_cm = profile.heightCm,
+                    smoking_status = profile.smokingStatus,
+                    purpose = profile.purpose,
+                    glucose_summary = glucoseSummary,
                 )
 
                 val request = ChatRequest(
@@ -80,6 +130,7 @@ class ChatViewModel : ViewModel() {
                 )
 
                 val response = NetworkModule.apiService.sendMessage(request)
+
 
                 val aiMessage = Message(
                     role = "assistant",
@@ -96,6 +147,7 @@ class ChatViewModel : ViewModel() {
                 // Auto-save after every AI response
                 historyRepo?.saveSession(updatedMessages)
 
+
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
@@ -105,3 +157,4 @@ class ChatViewModel : ViewModel() {
         }
     }
 }
+

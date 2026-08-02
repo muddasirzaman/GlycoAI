@@ -1,5 +1,4 @@
 package com.sugarsaathi.app
-
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -13,6 +12,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.runtime.CompositionLocalProvider
+import android.content.res.Configuration
+import java.util.Locale
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.LayoutDirection
 
 @Composable
 fun OnboardingScreen(onComplete: (UserProfileData) -> Unit) {
@@ -20,73 +27,250 @@ fun OnboardingScreen(onComplete: (UserProfileData) -> Unit) {
     var currentScreen by remember { mutableIntStateOf(1) }
     var name by remember { mutableStateOf("") }
     var age by remember { mutableStateOf("") }
+    var sex by remember { mutableStateOf("") }
+    var diagnosisYear by remember { mutableStateOf("") }
+    var hba1c by remember { mutableStateOf("") }
+    var glucoseUnit by remember { mutableStateOf("mg/dL") }
     var diabetesType by remember { mutableStateOf("") }
     var language by remember { mutableStateOf("en") }
     var selectedMeds by remember { mutableStateOf(setOf<String>()) }
+    var otherMedicine by remember { mutableStateOf("") }
+    var complicationText by remember { mutableStateOf("") }
+    var selectedConditions by remember {
+        mutableStateOf(setOf<String>())
+    }
+    var weight by remember { mutableStateOf("") }
+    var height by remember { mutableStateOf("") }
+    var smoking by remember { mutableStateOf("") }
+    var activity by remember { mutableStateOf("") }
+    var treatment by remember { mutableStateOf(setOf<String>()) }
+    var monitoring by remember { mutableStateOf("") }
+    var emergencies by remember { mutableStateOf(setOf<String>()) }
+    var dietPlan by remember { mutableStateOf("") }
+    var purpose by remember { mutableStateOf("") }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+    // Build a context whose locale follows the chosen language — live, no restart
+    val layoutDirection = if (language == "ur") LayoutDirection.Rtl else LayoutDirection.Ltr
+    val baseContext = LocalContext.current
+    val localizedContext = remember(language) {
+        val locale = Locale(language)
+        val config = Configuration(baseContext.resources.configuration)
+        config.setLocale(locale)
+        config.setLayoutDirection(locale)
+        baseContext.createConfigurationContext(config)
+    }
+
+    CompositionLocalProvider(
+        LocalContext provides localizedContext,
+        LocalConfiguration provides localizedContext.resources.configuration,
+                LocalLayoutDirection provides layoutDirection
     ) {
-        Text(
-            text = "Step $currentScreen of 3",
-            fontSize = 13.sp,
-            color = Color.Gray,
-            modifier = Modifier.padding(bottom = 8.dp)
-        )
-
-        LinearProgressIndicator(
-            progress = { currentScreen / 3f },
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 32.dp),
-            color = TealGreen
-        )
+                .fillMaxSize()
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = stringResource(R.string.step_progress, currentScreen),
+                fontSize = 13.sp,
+                color = Color.Gray,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
 
-        when (currentScreen) {
-            1 -> Screen1Language(
-                selectedLanguage = language,
-                onLanguageSelected = { language = it },
-                onNext = { currentScreen = 2 }
+            LinearProgressIndicator(
+                progress = { currentScreen / 7f },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 32.dp),
+                color = TealGreen
             )
-            2 -> Screen2BasicInfo(
-                name = name,
-                age = age,
-                onNameChange = { name = it },
-                onAgeChange = { age = it },
-                onNext = { currentScreen = 3 },
-                onBack = { currentScreen = 1 }
-            )
-            3 -> Screen3DiabetesType(
-                selectedType = diabetesType,
-                onTypeSelected = { diabetesType = it },
-                onNext = { currentScreen = 4 },
-                onBack = { currentScreen = 2 }
-            )
-            4 -> Screen4Medications(
-                selectedMeds = selectedMeds,
-                onMedToggle = { med ->
-                    selectedMeds = if (selectedMeds.contains(med))
-                        selectedMeds - med
-                    else
-                        selectedMeds + med
-                },
-                onBack = { currentScreen = 3 },
-                onFinish = {
-                    onComplete(
-                        UserProfileData(
-                            name = name.ifEmpty { "Friend" },
-                            age = age.toIntOrNull() ?: 30,
-                            diabetesType = diabetesType.ifEmpty { "unknown" },
-                            language = language,
-                            medications = selectedMeds.toList(),
-                            onboardingDone = true
+
+            when (currentScreen) {
+
+                1 -> Screen1Language(
+                    selectedLanguage = language,
+                    onLanguageSelected = { language = it },
+                    onNext = { currentScreen = 2 }
+                )
+
+                2 -> PurposeScreen(
+                    onPurposeSelected = { chosen ->
+                        purpose = chosen
+                        if (chosen == "patient") {
+                            currentScreen = 3   // continue to medical onboarding
+                        } else {
+                            // non-patient: complete immediately, go to chat
+                            onComplete(
+                                UserProfileData(
+                                    name = "Friend",
+                                    age = 30,
+                                    diabetesType = "none",
+                                    language = language,
+                                    purpose = chosen,
+                                    onboardingDone = true
+                                )
+                            )
+                        }
+                    }
+                )
+                3 -> Screen2BasicInfo(
+                    name = name,
+                    age = age,
+                    sex = sex,
+                    diagnosisYear = diagnosisYear,
+                    hba1c = hba1c,
+                    glucoseUnit = glucoseUnit,
+                    smoking = smoking,
+                    onNameChange = { name = it },
+                    onAgeChange = { age = it },
+                    onSexChange = { sex = it },
+                    onDiagnosisYearChange = { diagnosisYear = it },
+                    onHba1cChange = { hba1c = it },
+                    onGlucoseUnitChange = { glucoseUnit = it },
+                    onNext = { currentScreen = 4 },
+                    onBack = { currentScreen = 2 }
+                )
+
+                4 -> Screen3DiabetesType(
+                    selectedType = diabetesType,
+                    onTypeSelected = { diabetesType = it },
+                    onNext = { currentScreen = 5 },
+                    onBack = { currentScreen = 3 }
+                )
+
+                5 -> Screen4Conditions(
+                    selectedConditions = selectedConditions,
+                    otherCondition = complicationText,
+                    onOtherConditionChange = { complicationText = it },
+
+                    onConditionToggle = { condition ->
+                        val wasSelected = condition in selectedConditions
+
+                        selectedConditions =
+                            if (condition == "None") {
+                                if (wasSelected) {
+                                    emptySet()
+                                } else {
+                                    setOf("None")
+                                }
+                            } else {
+                                val withoutNone = selectedConditions - "None"
+
+                                if (condition in withoutNone) {
+                                    withoutNone - condition
+                                } else {
+                                    withoutNone + condition
+                                }
+                            }
+
+                        if (condition == "Other" && wasSelected) {
+                            complicationText = ""
+                        }
+                    },
+
+                    onBack = { currentScreen = 4 },
+                    onNext = { currentScreen = 6 }
+                )
+
+                6 -> HealthProfileScreen(
+                    weight = weight,
+                    height = height,
+                    smoking = smoking,
+                    activity = activity,
+                    treatment = treatment,
+                    monitoring = monitoring,
+                    emergencies = emergencies,
+                    dietPlan = dietPlan,
+                    onWeightChange = { weight = it },
+                    onHeightChange = { height = it },
+                    onSmokingChange = { smoking = it },
+                    onActivityChange = { activity = it },
+                    onTreatmentToggle = { item ->
+                        treatment = if (treatment.contains(item)) treatment - item else treatment + item
+                    },
+                    onMonitoringChange = { monitoring = it },
+                    onEmergencyToggle = { item ->
+                        emergencies = if (emergencies.contains(item)) emergencies - item else emergencies + item
+                    },
+                    onDietChange = { dietPlan = it },
+                    onBack = { currentScreen = 5 },
+                    onNext = { currentScreen = 7 }
+                )
+
+                7 -> Screen5Medications(
+                    selectedMeds = selectedMeds,
+                    otherMedicine = otherMedicine,
+                    onOtherMedicineChange = { otherMedicine = it },
+
+                    onMedToggle = { med ->
+                        val wasSelected = med in selectedMeds
+
+                        selectedMeds =
+                            if (med == "None") {
+                                if (wasSelected) {
+                                    emptySet()
+                                } else {
+                                    setOf("None")
+                                }
+                            } else {
+                                val withoutNone = selectedMeds - "None"
+
+                                if (med in withoutNone) {
+                                    withoutNone - med
+                                } else {
+                                    withoutNone + med
+                                }
+                            }
+
+                        if (med == "Other" && wasSelected) {
+                            otherMedicine = ""
+                        }
+                    },
+
+                    onBack = { currentScreen = 6 },
+
+                    onFinish = {
+                        onComplete(
+                            UserProfileData(
+                                name = name.ifEmpty { "Friend" },
+                                age = age.toIntOrNull() ?: 30,
+                                sex = sex,
+                                diagnosisYear = diagnosisYear.ifEmpty { null },
+                                hba1c = hba1c.toFloatOrNull(),
+                                glucoseUnit = glucoseUnit,
+                                diabetesType = diabetesType.ifEmpty { "unknown" },
+                                language = language,
+                                weightKg = weight.toFloatOrNull(),
+                                heightCm = height.toFloatOrNull(),
+                                smokingStatus = smoking,
+                                activityLevel = activity,
+                                treatmentApproach = treatment.toList(),
+                                monitoringMethod = monitoring,
+                                emergencyHistory = emergencies.toList(),
+                                dietPlan = dietPlan,
+                                medications = selectedMeds
+                                    .filter { it != "Other" && it != "None" }
+                                    .plus(
+                                        if ("Other" in selectedMeds) {
+                                            otherMedicine.split(",").map { it.trim() }.filter { it.isNotEmpty() }
+                                        } else emptyList()
+                                    ),
+                                complications = selectedConditions
+                                    .filter { it != "Other" && it != "None" }
+                                    .plus(
+                                        if ("Other" in selectedConditions) {
+                                            complicationText.split(",").map { it.trim() }.filter { it.isNotEmpty() }
+                                        } else emptyList()
+                                    ),
+                                onboardingDone = true
+                            )
                         )
-                    )
-                }
-            )
+                    }
+                )
+
+
+            }
         }
     }
 }
@@ -106,27 +290,27 @@ fun Screen1Language(
         Text("👋", fontSize = 48.sp)
         Spacer(modifier = Modifier.height(16.dp))
         Text(
-            text = "Welcome to GlycoAI",
+            text = stringResource(R.string.onboarding_welcome_title),
             fontSize = 24.sp,
             fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Center
         )
         Text(
-            text = "Your Daily Diabetes Companion",
+            text = stringResource(R.string.daily_companion),
             fontSize = 18.sp,
             color = Color.Gray,
             textAlign = TextAlign.Center
         )
         Spacer(modifier = Modifier.height(32.dp))
         Text(
-            text = "Select your language",
+            text = stringResource(R.string.select_language),
             fontSize = 16.sp,
             fontWeight = FontWeight.Medium
         )
         Spacer(modifier = Modifier.height(16.dp))
 
         SelectableButton(
-            text = "English",
+            text = stringResource(R.string.english),
             isSelected = selectedLanguage == "en",
             onClick = { onLanguageSelected("en") }
         )
@@ -143,41 +327,51 @@ fun Screen1Language(
             modifier = Modifier.fillMaxWidth(),
             colors = ButtonDefaults.buttonColors(containerColor = TealGreen)
         ) {
-            Text("Next →", fontSize = 16.sp)
+            Text(stringResource(R.string.next_button), fontSize = 16.sp)
         }
     }
 }
 
 // ─── Screen 2: Basic Info ─────────────────────────────
-
 @Composable
 fun Screen2BasicInfo(
     name: String,
     age: String,
+    sex: String,
+    diagnosisYear: String,
+    hba1c: String,
+    glucoseUnit: String,
+    smoking: String,
     onNameChange: (String) -> Unit,
     onAgeChange: (String) -> Unit,
+    onSexChange: (String) -> Unit,
+    onDiagnosisYearChange: (String) -> Unit,
+    onHba1cChange: (String) -> Unit,
+    onGlucoseUnitChange: (String) -> Unit,
     onNext: () -> Unit,
     onBack: () -> Unit
 ) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
     ) {
         Text("👤", fontSize = 48.sp)
         Spacer(modifier = Modifier.height(16.dp))
         Text(
-            text = "Tell us about yourself",
+            text = stringResource(R.string.tell_us_about_yourself),
             fontSize = 24.sp,
             fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Center
         )
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(24.dp))
 
         OutlinedTextField(
             value = name,
             onValueChange = onNameChange,
-            label = { Text("Your name") },
-            placeholder = { Text("e.g. Ghulam Mustafa") },
+            label = { RequiredLabel(stringResource(R.string.your_name)) },
+            placeholder = { Text(stringResource(R.string.name_hint)) },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
             colors = OutlinedTextFieldDefaults.colors(
@@ -186,17 +380,90 @@ fun Screen2BasicInfo(
             )
         )
         Spacer(modifier = Modifier.height(16.dp))
+
         OutlinedTextField(
             value = age,
             onValueChange = onAgeChange,
-            label = { Text("Your age") },
-            placeholder = { Text("e.g. 45") },
+            label = { RequiredLabel(stringResource(R.string.your_age)) },
+            placeholder = { Text(stringResource(R.string.age_hint)) },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
             colors = OutlinedTextFieldDefaults.colors(
                 focusedTextColor = Color.Black,
                 unfocusedTextColor = Color.Black
             )
+        )
+        Spacer(modifier = Modifier.height(20.dp))
+
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(
+                text = stringResource(R.string.gender),
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Medium
+            )
+            Text(" *", color = Color.Red, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            SelectableButton(stringResource(R.string.male), sex == "Male") { onSexChange("Male") }
+            SelectableButton(stringResource(R.string.female), sex == "Female") { onSexChange("Female") }
+            SelectableButton(stringResource(R.string.other), sex == "Other") { onSexChange("Other") }
+        }
+        Spacer(modifier = Modifier.height(20.dp))
+
+        OutlinedTextField(
+            value = diagnosisYear,
+            onValueChange = onDiagnosisYearChange,
+            label = { Text(stringResource(R.string.year_diagnosed)) },
+            placeholder = { Text(stringResource(R.string.year_hint)) },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedTextColor = Color.Black,
+                unfocusedTextColor = Color.Black
+            )
+        )
+        Spacer(modifier = Modifier.height(20.dp))
+
+        Text(
+            text = stringResource(R.string.blood_sugar_unit),
+            fontSize = 16.sp,
+            fontWeight = FontWeight.Medium,
+            modifier = Modifier.fillMaxWidth()
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            SelectableButton("mg/dL", glucoseUnit == "mg/dL") {
+                onGlucoseUnitChange("mg/dL")
+            }
+            SelectableButton("mmol/L", glucoseUnit == "mmol/L") {
+                onGlucoseUnitChange("mmol/L")
+            }
+        }
+        Spacer(modifier = Modifier.height(20.dp))
+
+        OutlinedTextField(
+            value = hba1c,
+            onValueChange = onHba1cChange,
+            label = { Text(stringResource(R.string.last_hba1c)) },
+            placeholder = { Text(stringResource(R.string.hba1c_hint)) },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedTextColor = Color.Black,
+                unfocusedTextColor = Color.Black
+            )
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = stringResource(R.string.dont_know_hba1c),
+            fontSize = 12.sp,
+            color = Color.Gray,
+            modifier = Modifier.fillMaxWidth()
         )
 
         Spacer(modifier = Modifier.height(32.dp))
@@ -207,13 +474,13 @@ fun Screen2BasicInfo(
             OutlinedButton(
                 onClick = onBack,
                 modifier = Modifier.weight(1f)
-            ) { Text("← Back") }
+            ) { Text(stringResource(R.string.back_button)) }
             Button(
                 onClick = onNext,
                 modifier = Modifier.weight(2f),
                 colors = ButtonDefaults.buttonColors(containerColor = TealGreen),
-                enabled = name.isNotEmpty()
-            ) { Text("Next →") }
+                enabled = name.isNotEmpty() && age.isNotEmpty() && sex.isNotEmpty()
+            ) { Text(stringResource(R.string.next_button)) }
         }
     }
 }
@@ -227,25 +494,36 @@ fun Screen3DiabetesType(
     onNext: () -> Unit,
     onBack: () -> Unit
 ) {
+    // Resolve strings first (stringResource can't run inside listOf)
     val types = listOf(
-        Triple("type1", "Type 1", "Insulin dependent"),
-        Triple("type2", "Type 2", "Lifestyle related"),
-        Triple("prediabetes", "Pre-diabetes", "At risk"),
-        Triple("unknown", "Not sure", "I don't know my type")
+        Triple("type1", stringResource(R.string.type1), stringResource(R.string.type1_desc)),
+        Triple("type2", stringResource(R.string.type2), stringResource(R.string.type2_desc)),
+        Triple("prediabetes", stringResource(R.string.prediabetes), stringResource(R.string.prediabetes_desc)),
+        Triple("unknown", stringResource(R.string.not_sure), stringResource(R.string.not_sure_desc)),
+        Triple("none", stringResource(R.string.none_option), stringResource(R.string.none_desc))
     )
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
     ) {
         Text("🩺", fontSize = 48.sp)
         Spacer(modifier = Modifier.height(16.dp))
-        Text(
-            text = "What type of diabetes\ndo you have?",
-            fontSize = 22.sp,
-            fontWeight = FontWeight.Bold,
-            textAlign = TextAlign.Center
-        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+        ) {
+            Text(
+                text = stringResource(R.string.diabetes_type_question),
+                fontSize = 22.sp,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center
+            )
+            Text(" *", color = Color.Red, fontWeight = FontWeight.Bold, fontSize = 22.sp)
+        }
+
         Spacer(modifier = Modifier.height(24.dp))
 
         types.forEach { (value, title, subtitle) ->
@@ -258,7 +536,8 @@ fun Screen3DiabetesType(
             Spacer(modifier = Modifier.height(8.dp))
         }
 
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(24.dp))
+
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -266,29 +545,133 @@ fun Screen3DiabetesType(
             OutlinedButton(
                 onClick = onBack,
                 modifier = Modifier.weight(1f)
-            ) { Text("← Back") }
+            ) {
+                Text(stringResource(R.string.back_button))
+            }
             Button(
                 onClick = onNext,
                 modifier = Modifier.weight(2f),
                 colors = ButtonDefaults.buttonColors(containerColor = TealGreen),
                 enabled = selectedType.isNotEmpty()
-            ) { Text("Next →") }
+            ) {
+                Text(stringResource(R.string.next_button))
+            }
         }
     }
 }
 
-// ─── Screen 4: Medications ────────────────────────────
+// ─── Screen 4: conditions ────────────────────────────
+@Composable
+fun Screen4Conditions(
+    selectedConditions: Set<String>,
+    otherCondition: String,
+    onOtherConditionChange: (String) -> Unit,
+    onConditionToggle: (String) -> Unit,
+    onBack: () -> Unit,
+    onNext: () -> Unit
+) {
+    // English value paired with translated label
+    val conditions = listOf(
+        "Kidney disease" to stringResource(R.string.cond_kidney),
+        "Heart disease" to stringResource(R.string.cond_heart),
+        "High blood pressure" to stringResource(R.string.cond_bp),
+        "Eye problems / retinopathy" to stringResource(R.string.cond_eye),
+        "Nerve problems / neuropathy" to stringResource(R.string.cond_nerve),
+        "Foot ulcer or previous amputation" to stringResource(R.string.cond_foot),
+        "Pregnant or planning pregnancy" to stringResource(R.string.cond_pregnant),
+        "None" to stringResource(R.string.cond_none),
+        "Other" to stringResource(R.string.cond_other)
+    )
+
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+    ) {
+        Text("❤️", fontSize = 48.sp)
+        Spacer(modifier = Modifier.height(12.dp))
+        Text(
+            text = stringResource(R.string.related_conditions),
+            fontSize = 22.sp,
+            fontWeight = FontWeight.Bold,
+            textAlign = TextAlign.Center
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = stringResource(R.string.select_all_apply),
+            fontSize = 14.sp,
+            color = Color.Gray
+        )
+        Spacer(modifier = Modifier.height(20.dp))
+
+        conditions.forEach { (value, label) ->
+            SelectableCard(
+                title = label,
+                subtitle = "",
+                isSelected = selectedConditions.contains(value),
+                onClick = { onConditionToggle(value) }
+            )
+            Spacer(modifier = Modifier.height(6.dp))
+        }
+
+        if ("Other" in selectedConditions) {
+            Spacer(modifier = Modifier.height(8.dp))
+            OutlinedTextField(
+                value = otherCondition,
+                onValueChange = onOtherConditionChange,
+                label = { Text(stringResource(R.string.enter_other_condition)) },
+                placeholder = { Text(stringResource(R.string.separate_commas_condition)) },
+                modifier = Modifier.fillMaxWidth(),
+                minLines = 2
+            )
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            OutlinedButton(
+                onClick = onBack,
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(stringResource(R.string.back_button))
+            }
+            Button(
+                onClick = onNext,
+                modifier = Modifier.weight(2f),
+                colors = ButtonDefaults.buttonColors(containerColor = TealGreen),
+                enabled = selectedConditions.isNotEmpty() &&
+                        ("Other" !in selectedConditions || otherCondition.isNotBlank())
+            ) {
+                Text(stringResource(R.string.next_button))
+            }
+        }
+    }
+}
+
+// ─── Screen 5: Medications ────────────────────────────
 
 @Composable
-fun Screen4Medications(
+fun Screen5Medications(
     selectedMeds: Set<String>,
+    otherMedicine: String,
+    onOtherMedicineChange: (String) -> Unit,
     onMedToggle: (String) -> Unit,
     onBack: () -> Unit,
     onFinish: () -> Unit
 ) {
+    // Drug brand names stay as-is; only None/Other translate
     val medications = listOf(
-        "Glucophage", "Mixtard", "Amaryl",
-        "Diamicron", "Lantus", "None"
+        "Glucophage" to "Glucophage",
+        "Mixtard" to "Mixtard",
+        "Amaryl" to "Amaryl",
+        "Diamicron" to "Diamicron",
+        "Lantus" to "Lantus",
+        "None" to stringResource(R.string.med_none),
+        "Other" to stringResource(R.string.med_other)
     )
 
     Column(
@@ -299,29 +682,46 @@ fun Screen4Medications(
     ) {
         Text("💊", fontSize = 48.sp)
         Spacer(modifier = Modifier.height(16.dp))
-        Text(
-            text = "Current medications",
-            fontSize = 24.sp,
-            fontWeight = FontWeight.Bold
-        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+        ) {
+            Text(
+                text = stringResource(R.string.current_medications),
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold
+            )
+            Text(" *", color = Color.Red, fontWeight = FontWeight.Bold, fontSize = 24.sp)
+        }
         Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = "Select all that apply",
+            text = stringResource(R.string.select_all_apply),
             fontSize = 14.sp,
             color = Color.Gray
         )
         Spacer(modifier = Modifier.height(24.dp))
 
-        medications.forEach { med ->
+        medications.forEach { (value, label) ->
             SelectableCard(
-                title = med,
+                title = label,
                 subtitle = "",
-                isSelected = selectedMeds.contains(med),
-                onClick = { onMedToggle(med) }
+                isSelected = selectedMeds.contains(value),
+                onClick = { onMedToggle(value) }
             )
             Spacer(modifier = Modifier.height(6.dp))
         }
 
+        if (selectedMeds.contains("Other")) {
+            OutlinedTextField(
+                value = otherMedicine,
+                onValueChange = onOtherMedicineChange,
+                label = { Text(stringResource(R.string.enter_medicine_names)) },
+                placeholder = { Text(stringResource(R.string.separate_commas_medicine)) },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+        }
         Spacer(modifier = Modifier.height(24.dp))
 
         Row(
@@ -331,12 +731,17 @@ fun Screen4Medications(
             OutlinedButton(
                 onClick = onBack,
                 modifier = Modifier.weight(1f)
-            ) { Text("← Back") }
+            ) {
+                Text(stringResource(R.string.back_button))
+            }
             Button(
                 onClick = onFinish,
                 modifier = Modifier.weight(2f),
-                colors = ButtonDefaults.buttonColors(containerColor = TealGreen)
-            ) { Text("Start Chatting! 🚀") }
+                colors = ButtonDefaults.buttonColors(containerColor = TealGreen),
+                enabled = selectedMeds.isNotEmpty() && ("Other" !in selectedMeds || otherMedicine.isNotBlank())
+            ) {
+                Text(stringResource(R.string.start_chatting))
+            }
         }
     }
 }
@@ -415,5 +820,13 @@ fun SelectableCard(
                 )
             }
         }
+    }
+}
+
+@Composable
+fun RequiredLabel(text: String) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Text(text)
+        Text(" *", color = Color.Red, fontWeight = FontWeight.Bold)
     }
 }

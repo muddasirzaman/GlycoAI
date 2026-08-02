@@ -9,11 +9,59 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.sugarsaathi.app.ui.theme.SugarSaathiTheme
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
+import androidx.work.ExistingWorkPolicy
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
+import java.util.concurrent.TimeUnit
+import java.util.Locale
+import android.content.res.Configuration
+import android.content.Context
 
 class MainActivity : ComponentActivity() {
 
+    companion object {
+        private var splashShown = false
+    }
+    private var chatVM: ChatViewModel? = null
+    private var currentProfile: UserProfileData? = null
+
+    override fun attachBaseContext(newBase: Context) {
+        val lang = LocaleHelper.savedLanguage(newBase)
+        super.attachBaseContext(LocaleHelper.wrap(newBase, lang))
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        if (
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.POST_NOTIFICATIONS
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(Manifest.permission.POST_NOTIFICATIONS),
+                100
+            )
+        }
+
+        val reminderRequest =
+            OneTimeWorkRequestBuilder<ReminderWorker>()
+                .setInitialDelay(24, TimeUnit.HOURS)
+                .build()
+
+        WorkManager.getInstance(this).enqueueUniqueWork(
+            "sugar_saathi_reminder",
+            ExistingWorkPolicy.REPLACE,
+            reminderRequest
+        )
 
         val profileRepo = ProfileRepository(this)
 
@@ -22,23 +70,37 @@ class MainActivity : ComponentActivity() {
 
                 var profile by remember { mutableStateOf<UserProfileData?>(null) }
                 var isLoading by remember { mutableStateOf(true) }
-                var showSplash by remember { mutableStateOf(true) }
+                var showSplash by remember { mutableStateOf(!splashShown) }
                 var showOnboarding by remember { mutableStateOf(false) }
-                var showHistory by remember { mutableStateOf(false) }
+
+                // which tab is selected
+                var selectedTab by remember { mutableIntStateOf(0) }
+
+                // sub-screens that open ON TOP of a tab
+                var showAddReading by remember { mutableStateOf(false) }
                 var selectedSession by remember { mutableStateOf<ChatSession?>(null) }
                 val chatViewModel: ChatViewModel = viewModel()
+                val glucoseViewModel: GlucoseViewModel = viewModel()
+                var showChatHistory by remember { mutableStateOf(false) }
+                chatVM = chatViewModel
 
                 LaunchedEffect(Unit) {
-                    val savedProfile = profileRepo.profileFlow.first()
-                    profile = savedProfile
+                    val saved = profileRepo.profileFlow.first()
+                    profile = saved
+                    currentProfile = saved
+                    saved?.let {
+                        LocaleHelper.saveLanguage(this@MainActivity, it.language)
+                    }
                     isLoading = false
+                    chatViewModel.initProfileRepo(this@MainActivity)
+                    glucoseViewModel.init(this@MainActivity)
                 }
 
                 when {
-                    showSplash -> {
-                        SplashScreen(onFinished = { showSplash = false })
-                    }
-
+                    showSplash -> SplashScreen(onFinished = {
+                        showSplash = false
+                        splashShown = true
+                    })
                     isLoading -> LoadingScreen()
 
                     profile?.onboardingDone != true || showOnboarding -> {
@@ -46,13 +108,27 @@ class MainActivity : ComponentActivity() {
                             onComplete = { newProfile ->
                                 lifecycleScope.launch {
                                     profileRepo.saveProfile(newProfile)
-                                    profile = newProfile
-                                    showOnboarding = false
+                                    LocaleHelper.saveLanguage(this@MainActivity, newProfile.language)
+                                    recreate()   // restarts so the new locale applies
                                 }
                             }
                         )
                     }
 
+                    // A reading form opened on top of the Tracker tab
+                    showAddReading -> {
+                        AddReadingScreen(
+                            defaultUnit = profile!!.glucoseUnit,
+                            glucoseViewModel = glucoseViewModel,
+                            onBack = { showAddReading = false },
+                            onSaved = {
+                                showAddReading = false
+                                selectedTab = 2      // jump to the History tab
+                            }
+                        )
+                    }
+
+                    // A past chat session opened on top of the History tab
                     selectedSession != null -> {
                         ChatDetailScreen(
                             session = selectedSession!!,
@@ -60,25 +136,41 @@ class MainActivity : ComponentActivity() {
                         )
                     }
 
-                    showHistory -> {
+                    showChatHistory -> {
                         ChatHistoryScreen(
-                            onBack = { showHistory = false },
-                            onOpenSession = { session ->
-                                selectedSession = session
-                            }
+                            onBack = { showChatHistory = false },
+                            onOpenSession = { session -> selectedSession = session }
                         )
                     }
 
+                    // The main tabbed interface
+                    // The main tabbed interface
+                    // The main tabbed interface
+                    // The main tabbed interface
                     else -> {
-                        WelcomeScreen(
+                        MainTabScreen(
+                            selectedTab = selectedTab,
+                            onTabSelected = { selectedTab = it },
                             profile = profile!!,
-                            onChangeInfo = { showOnboarding = true },
-                            onHistoryClick = { showHistory = true },
-                            chatViewModel = chatViewModel
+                            chatViewModel = chatViewModel,
+                            glucoseViewModel = glucoseViewModel,
+                            onAddReading = { showAddReading = true },
+                            onOpenSession = { selectedSession = it },
+                            onChatHistory = { showChatHistory = true },
+                            onEditProfile = { showOnboarding = true }
                         )
                     }
                 }
             }
+        }
+    }
+    override fun onStop() {
+        super.onStop()
+        val vm = chatVM
+        val prof = currentProfile
+        if (vm != null && prof != null) {
+            vm.saveCurrentSession()
+            vm.extractAndSaveFacts(prof)
         }
     }
 }

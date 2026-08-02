@@ -47,6 +47,13 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.rememberAsyncImagePainter
 import java.io.File
 import java.util.Locale
+import androidx.compose.ui.res.stringResource
+import android.widget.Toast
+import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.res.stringResource
 
 val TealGreen = Color(0xFF1D9E75)
 
@@ -54,6 +61,7 @@ val TealGreen = Color(0xFF1D9E75)
 @Composable
 fun ChatScreen(
     userProfile: UserProfileData,
+    glucoseViewModel: GlucoseViewModel? = null,
     onHistoryClick: () -> Unit = {},
     chatViewModel: ChatViewModel = viewModel()
 ) {
@@ -101,12 +109,14 @@ fun ChatScreen(
             chatViewModel.sendMessage(
                 userText = messageText,
                 profile = userProfile,
+                glucoseSummary = glucoseViewModel?.glucoseSummaryForAI(),
                 imageBase64 = selectedImageBase64,
                 imageMimeType = selectedImageMime,
                 documentBase64 = selectedDocBase64,
                 documentMimeType = selectedDocMime,
                 documentName = selectedDocName
             )
+
             selectedImageUri = null
             selectedImageBase64 = null
             selectedImageMime = null
@@ -124,7 +134,11 @@ fun ChatScreen(
                 ?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
                 ?.firstOrNull() ?: ""
             if (spokenText.isNotEmpty()) {
-                chatViewModel.sendMessage(spokenText, userProfile)
+                chatViewModel.sendMessage(
+                    spokenText,
+                    userProfile,
+                    glucoseViewModel?.glucoseSummaryForAI()
+                )
             }
         }
     }
@@ -235,7 +249,7 @@ fun ChatScreen(
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        text = if (isUrdu) "آپ کا روزانہ ذیابیطس ساتھی" else "Your Daily Diabetes Companion",
+                        text = stringResource(R.string.chat_subtitle),
                         fontSize = 12.sp,
                         color = Color.White.copy(alpha = 0.8f)
                     )
@@ -375,14 +389,14 @@ fun ChatScreen(
                     .padding(bottom = 4.dp)
             ) {
                 SpeedDialItem(
-                    label = if (isUrdu) "آواز" else "Voice",
+                    label = stringResource(R.string.voice),
                     color = Color(0xFF1A6B8A),
                     icon = Icons.Default.Mic,
                     onClick = { expanded = false; startVoiceInput() }
                 )
                 Spacer(modifier = Modifier.height(6.dp))
                 SpeedDialItem(
-                    label = if (isUrdu) "گیلری" else "Gallery",
+                    label = stringResource(R.string.gallery),
                     color = Color(0xFF7C5CBF),
                     icon = Icons.Default.Image,
                     onClick = {
@@ -392,14 +406,14 @@ fun ChatScreen(
                 )
                 Spacer(modifier = Modifier.height(6.dp))
                 SpeedDialItem(
-                    label = if (isUrdu) "کیمرہ" else "Camera",
+                    label = stringResource(R.string.camera),
                     color = Color(0xFF0D7A5F),
                     icon = Icons.Default.CameraAlt,
                     onClick = { expanded = false; openCamera() }
                 )
                 Spacer(modifier = Modifier.height(6.dp))
                 SpeedDialItem(
-                    label = if (isUrdu) "دستاویز" else "Document",
+                    label = stringResource(R.string.document),
                     color = Color(0xFF3F51B5),
                     icon = Icons.Default.Description,
                     onClick = {
@@ -436,7 +450,7 @@ fun ChatScreen(
                 value = inputText,
                 onValueChange = { inputText = it },
                 placeholder = {
-                    Text(if (isUrdu) "اپنا سوال لکھیں..." else "Type your question...")
+                    Text(stringResource(R.string.type_question))
                 },
                 modifier = Modifier.weight(1f),
                 shape = RoundedCornerShape(24.dp),
@@ -508,16 +522,13 @@ fun WelcomeMessage(isUrdu: Boolean, name: String) {
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
-                text = if (isUrdu) "السلام علیکم! 👋" else "Hello, $name! 👋",
+                text = stringResource(R.string.chat_hello, name),
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = if (isUrdu)
-                    "میں گلائیکو اے آئی ہوں۔ ذیابیطس کے بارے میں کچھ بھی پوچھیں!"
-                else
-                    "I am GlycoAI. Ask me anything about diabetes!",
+                text = stringResource(R.string.chat_intro),
                 fontSize = 14.sp,
                 lineHeight = 22.sp
             )
@@ -528,17 +539,20 @@ fun WelcomeMessage(isUrdu: Boolean, name: String) {
 @Composable
 fun MessageBubble(message: Message, onSpeak: ((String) -> Unit)? = null) {
     val isUser = message.role == "user"
+    val context = LocalContext.current
+    val clipboard = LocalClipboardManager.current
+    val copiedMsg = stringResource(R.string.copied_to_clipboard)
 
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = if (isUser) Arrangement.End else Arrangement.Start
     ) {
         Column(
+            modifier = Modifier.fillMaxWidth(if (isUser) 0.85f else 0.95f),
             horizontalAlignment = if (isUser) Alignment.End else Alignment.Start
         ) {
             Box(
                 modifier = Modifier
-                    .widthIn(max = 280.dp)
                     .background(
                         color = if (isUser) TealGreen
                         else MaterialTheme.colorScheme.surfaceVariant,
@@ -549,30 +563,50 @@ fun MessageBubble(message: Message, onSpeak: ((String) -> Unit)? = null) {
                             bottomEnd = if (isUser) 4.dp else 16.dp
                         )
                     )
-                    .padding(12.dp)
+                    .padding(14.dp)
             ) {
-                Text(
-                    text = message.content
-                        .replace("**", "")
-                        .replace("##", "")
-                        .replace("---", "─────"),
-                    color = if (isUser) Color.White else MaterialTheme.colorScheme.onSurface,
-                    fontSize = 15.sp,
-                    lineHeight = 22.sp
-                )
+                SelectionContainer {
+                    LinkifiedMessageText(
+                        text = message.content
+                            .replace("**", "")
+                            .replace("##", "")
+                            .replace("---", "─────"),
+                        textColor = if (isUser) Color.White else MaterialTheme.colorScheme.onSurface,
+                        fontSize = 15.sp,
+                        lineHeight = 22.sp
+                    )
+                }
             }
 
-            if (!isUser && onSpeak != null) {
-                IconButton(
-                    onClick = { onSpeak(message.content) },
-                    modifier = Modifier.size(32.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.VolumeUp,
-                        contentDescription = "Speak",
-                        tint = TealGreen,
-                        modifier = Modifier.size(18.dp)
-                    )
+            if (!isUser) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (onSpeak != null) {
+                        IconButton(
+                            onClick = { onSpeak(message.content) },
+                            modifier = Modifier.size(32.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.VolumeUp,
+                                contentDescription = "Speak",
+                                tint = TealGreen,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    }
+                    IconButton(
+                        onClick = {
+                            clipboard.setText(AnnotatedString(message.content))
+                            Toast.makeText(context, copiedMsg, Toast.LENGTH_SHORT).show()
+                        },
+                        modifier = Modifier.size(32.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.ContentCopy,
+                            contentDescription = stringResource(R.string.copy_message),
+                            tint = TealGreen,
+                            modifier = Modifier.size(17.dp)
+                        )
+                    }
                 }
             }
         }
@@ -592,7 +626,7 @@ fun TypingIndicator(isUrdu: Boolean) {
             color = TealGreen
         )
         Text(
-            text = if (isUrdu) "جواب آ رہا ہے..." else "Thinking...",
+            text = stringResource(R.string.thinking),
             fontSize = 12.sp,
             color = Color.Gray
         )

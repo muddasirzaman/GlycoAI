@@ -1,3 +1,257 @@
 <resources>
-    <string name="app_name">GlycoAI</string>
+
+
+
+    <string name="language_label">زبان</string>
+    <string name="lang_english">English</string>
+    <string name="lang_urdu">اردو</string>
+    <string name="copied_to_clipboard">✅ Copied to clipboard</string>
+    <string name="copy_message">Copy</string>
+
+    <!-- Welcome / navigation -->
+    <string name="app_name" translatable="false">GlycoAI</string>
+    <string name="welcome_back">Welcome back,</string>
+    <string name="continue_button">Continue →</string>
+    <string name="blood_sugar_tracker">🩸  Blood Sugar Tracker</string>
+
+    <!-- Purpose screen -->
+    <string name="purpose_title">What is your purpose for using GlycoAI?</string>
+    <string name="purpose_subtitle">This helps us personalize your experience and show the most relevant features.</string>
+    <string name="purpose_patient">I have diabetes</string>
+    <string name="purpose_patient_desc">Get personalized guidance for managing my diabetes</string>
+    <string name="purpose_educational">I\'m here to learn</string>
+    <string name="purpose_educational_desc">Explore diabetes education without a medical profile</string>
+    <string name="purpose_professional">I\'m a healthcare professional</string>
+    <string name="purpose_professional_desc">Use the app as a reference tool</string>
+    <string name="purpose_caregiver">I care for someone with diabetes</string>
+    <string name="purpose_caregiver_desc">Learn to support a family member or patient</string>
+
+    <!-- Onboarding -->
+    <string name="onboarding_welcome_title">Welcome to GlycoAI</string>
+    <string name="select_language">Select your language</string>
+    <string name="next_button">Next →</string>
+    <string name="back_button">← Back</string>
+    <string name="tell_us_about_yourself">Tell us about yourself</string>
+    <string name="your_name">Your name</string>
+    <string name="your_age">Your age</string>
+    <string name="gender">Gender</string>
+    <string name="male">Male</string>
+    <string name="female">Female</string>
+    <string name="other">Other</string>
+    <string name="year_diagnosed">Year diagnosed (optional)</string>
+    <string name="blood_sugar_unit">Blood sugar unit</string>
+    <string name="last_hba1c">Last HbA1c % (optional)</string>
+    <string name="dont_know_hba1c">Leave blank if you don\'t know it</string>
+    <string name="diabetes_type_question">What type of diabetes do you have?</string>
+    <string name="type1">Type 1</string>
+    <string name="type1_desc">Insulin dependent</string>
+    <string name="type2">Type 2</string>
+    <string name="type2_desc">Lifestyle related</string>
+    <string name="prediabetes">Pre-diabetes</string>
+    <string name="prediabetes_desc">At risk</string>
+    <string name="not_sure">Not sure</string>
+    <string name="not_sure_desc">I don\'t know my type</string>
+    <string name="none_option">None</string>
+    <string name="none_desc">Learning / for someone else</string>
+    <string name="start_chatting">Start Chatting! 🚀</string>
+
+    <!-- Onboarding screens 1, 2 extras -->
+    <string name="daily_companion">Your Daily Diabetes Companion</string>
+    <string name="english">English</string>
+    <string name="name_hint">e.g. Ghulam Mustafa</string>
+    <string name="age_hint">e.g. 45</string>
+    <string name="year_hint">e.g. 2019</string>
+    <string name="hba1c_hint">e.g. 7.8</string>
+    <string name="step_progress">Step %1$d of 6</string>
+
+    <!-- About Yourself additions -->
+    <string name="country_region">Country / Region</string>
+    <string name="country_hint">e.g. Pakistan</string>
+    <string name="occupation">Occupation (optional)</string>
+    <string name="occupation_hint">e.g. Teacher</string>
+    <string name="education_level">Education level</string>
+    <string name="edu_none">None</string>
+    <string name="edu_primary">Primary</string>
+    <string name="edu_secondary">Secondary</string>
+    <string name="edu_higher">Higher</string>
+    <string name="used_chatbot">Used a diabetes AI assistant before?</string>
+    <string name="answer_yes">Yes</string>
+    <string name="answer_no">No</string>
+
+    <!-- Health Profile screen -->
+    <string name="health_profile">Health Profile</string>
+    <string name="physical_info">Physical Information</string>
+    <string name="bmi_label">BMI</string>
+    <string name="bmi_underweight">Underweight</string>
+    <string name="bmi_normal">Normal</string>
+    <string name="bmi_overweight">Overweight</string>
+    <string name="bmi_obese">Obese</string>
+
+    <string name="lifestyle">Lifestyle</string>
+
+    <string name="activity_level">Physical activity level</string>
+    <string name="activity_sedentary">Sedentary</string>
+    <string name="activity_light">Lightly active</string>
+    <string name="activity_moderate">Moderately active</string>
+    <string name="activity_very">Very active</string>
+
+    <string name="treatment_approach">How are you managing your diabetes?</string>
+    <string name="tr_oral">Oral medication</string>
+    <string name="tr_insulin">Insulin</string>
+    <string name="tr_diet">Diet control</string>
+    <string name="tr_exercise">Regular exercise</string>
+    <string name="tr_none">None</string>
+    <string name="tr_other">Other</string>
+
+    <string name="monitoring_method">How do you monitor your blood glucose?</string>
+    <string name="mon_glucometer">Glucometer (fingerstick)</string>
+    <string name="mon_cgm">Continuous glucose monitor (CGM)</string>
+    <string name="mon_rarely">Rarely check</string>
+    <string name="mon_never">Never check</string>
+
+    <string name="emergency_history">Have you ever experienced?</string>
+    <string name="em_severe_low">Severe low blood sugar needing help</string>
+    <string name="em_dka">Diabetic ketoacidosis (DKA)</string>
+    <string name="em_hospital">Hospital admission for diabetes</string>
+    <string name="em_none">None of the above</string>
+
+    <string name="diet_plan">Do you follow a special eating plan? (optional)</string>
+    <string name="diet_general">General healthy diet</string>
+    <string name="diet_lowcarb">Low-carbohydrate</string>
+    <string name="diet_mediterranean">Mediterranean</string>
+    <string name="diet_vegetarian">Vegetarian</string>
+    <string name="diet_vegan">Vegan</string>
+    <string name="diet_other">Other</string>
+
+    <!-- Screen 4: conditions -->
+    <string name="related_conditions">Related health conditions</string>
+    <string name="select_all_apply">Select all that apply</string>
+    <string name="cond_kidney">Kidney disease</string>
+    <string name="cond_heart">Heart disease</string>
+    <string name="cond_bp">High blood pressure</string>
+    <string name="cond_eye">Eye problems / retinopathy</string>
+    <string name="cond_nerve">Nerve problems / neuropathy</string>
+    <string name="cond_foot">Foot ulcer or previous amputation</string>
+    <string name="cond_pregnant">Pregnant or planning pregnancy</string>
+    <string name="cond_none">None</string>
+    <string name="cond_other">Other</string>
+    <string name="enter_other_condition">Enter other condition(s)</string>
+    <string name="separate_commas_condition">Separate multiple conditions with commas</string>
+
+    <!-- Health metrics -->
+    <string name="weight_kg">Weight in kg</string>
+    <string name="height_cm">Height in cm</string>
+    <string name="weight_hint">e.g. 72</string>
+    <string name="height_hint">e.g. 168</string>
+    <string name="smoking_status">Do you smoke?</string>
+    <string name="smoke_never">Never</string>
+    <string name="smoke_former">Former</string>
+    <string name="smoke_current">Current</string>
+
+    <!-- Screen 5: medications -->
+    <string name="current_medications">Current medications</string>
+    <string name="med_none">None</string>
+    <string name="med_other">Other</string>
+    <string name="enter_medicine_names">Enter medicine name(s)</string>
+    <string name="separate_commas_medicine">Separate multiple medicines with commas</string>
+
+    <!-- Chat screen -->
+    <string name="chat_subtitle">Your Daily Diabetes Companion</string>
+    <string name="type_question">Type your question...</string>
+    <string name="thinking">Thinking...</string>
+    <string name="chat_hello">Hello, %1$s! 👋</string>
+    <string name="chat_intro">I am GlycoAI. Ask me anything about diabetes!</string>
+    <string name="voice">Voice</string>
+    <string name="gallery">Gallery</string>
+    <string name="camera">Camera</string>
+    <string name="document">Document</string>
+
+    <!-- Bottom tabs -->
+    <string name="tab_chat">Chat</string>
+    <string name="tab_tracker">Tracker</string>
+    <string name="tab_history">History</string>
+    <string name="tab_profile">Profile</string>
+
+    <!-- Profile tab -->
+    <string name="profile_name">Name: %1$s</string>
+    <string name="profile_age">Age: %1$d</string>
+    <string name="profile_diabetes">Diabetes: %1$s</string>
+    <string name="edit_my_information">Edit My Information</string>
+
+    <!-- Glucose hub -->
+    <string name="track_blood_sugar">Track your blood sugar</string>
+    <string name="log_and_progress">Log readings and see your progress</string>
+    <string name="add_reading">＋  Add Reading</string>
+    <string name="view_my_readings">📊  View My Readings</string>
+
+    <!-- Add reading screen -->
+    <string name="tracker_title">Blood Sugar Tracker</string>
+    <string name="add_glucose_reading">Add Glucose Reading</string>
+    <string name="blood_glucose_reading">Blood glucose reading</string>
+    <string name="glucose_hint">e.g. 120</string>
+    <string name="when_taken">When was this taken?</string>
+    <string name="notes_optional">Notes (optional)</string>
+    <string name="type_own_note">Or type your own note</string>
+    <string name="save_reading">Save Reading</string>
+    <string name="enter_valid_number">Please enter a valid number.</string>
+    <string name="range_error_mgdl">Reading must be between 20 and 700 mg/dL.</string>
+    <string name="range_error_mmol">Reading must be between 1 and 40 mmol/L.</string>
+
+    <!-- Reading types -->
+    <string name="rt_fasting">Fasting</string>
+    <string name="rt_before_breakfast">Before Breakfast</string>
+    <string name="rt_after_breakfast">After Breakfast</string>
+    <string name="rt_before_lunch">Before Lunch</string>
+    <string name="rt_after_lunch">After Lunch</string>
+    <string name="rt_before_dinner">Before Dinner</string>
+    <string name="rt_after_dinner">After Dinner</string>
+    <string name="rt_bedtime">Bedtime</string>
+    <string name="rt_random">Random</string>
+
+    <!-- Quick notes -->
+    <string name="qn_dizzy">Feeling dizzy</string>
+    <string name="qn_sweets">Ate sweets</string>
+    <string name="qn_exercised">Exercised</string>
+    <string name="qn_missed_med">Missed medication</string>
+
+    <!-- History screen -->
+    <string name="glucose_history">Glucose History</string>
+    <string name="no_readings_yet">No readings yet.\nTap \'Add Reading\' to log one.</string>
+    <string name="last_7_days">Last 7 Days</string>
+    <string name="stat_average">Average</string>
+    <string name="stat_highest">Highest</string>
+    <string name="stat_lowest">Lowest</string>
+    <string name="stat_readings">Readings</string>
+    <string name="stat_in_range">In Range</string>
+    <string name="no_readings_7days">No readings in the last 7 days.</string>
+    <string name="status_low">Low</string>
+    <string name="status_normal">Normal</string>
+    <string name="status_borderline">Borderline</string>
+    <string name="status_high">High</string>
+
+    <!-- Glucose suggestions -->
+    <string name="sugg_severe_low_title">⚠️ Very low blood sugar</string>
+    <string name="sugg_severe_low">Your reading is dangerously low. Treat it now with fast-acting sugar — juice, regular soda, or glucose tablets. Tell someone nearby. Recheck in 15 minutes. If you feel confused, drowsy, or do not improve, seek emergency care immediately (1122).</string>
+
+    <string name="sugg_low_title">🟠 Low blood sugar</string>
+    <string name="sugg_low">Your sugar is below target. Take fast-acting sugar now — half a glass of juice, regular soda, or glucose tablets — then recheck after 15 minutes. Repeat if still low. If symptoms get worse or do not improve, contact your doctor.</string>
+
+    <string name="sugg_in_range_title">🎉 Nicely in range</string>
+    <string name="sugg_in_range_1">Great work — your reading is in the target range. Keep going with your meals, activity, and medicines as usual. 💚</string>
+    <string name="sugg_in_range_2">Well done. This is right where you want to be. Consistency like this is what protects your health long term. 😊</string>
+    <string name="sugg_in_range_3">Your sugar is in range — that is a real achievement. Whatever you are doing, keep it up. 🍎</string>
+
+    <string name="sugg_slightly_high_title">🟡 A little high</string>
+    <string name="sugg_slightly_high_1">Slightly above target — this happens to everyone. Drink some water 💧, and a short walk can help if you feel up to it. 🚶</string>
+    <string name="sugg_slightly_high_2">A bit high right now. Stay hydrated, go easy on sugary food and drinks, and keep taking your medicines as prescribed.</string>
+    <string name="sugg_slightly_high_3">This reading is a little above range. Nothing to worry about on its own — keep monitoring and see if it settles.</string>
+
+    <string name="sugg_high_title">🔴 High reading</string>
+    <string name="sugg_high">Your sugar is high. Stay calm, drink water, and avoid sugary food. Recheck in a couple of hours. If it stays high, or you feel unwell — very thirsty, nauseated, or short of breath — contact your doctor.</string>
+
+    <string name="sugg_very_high_title">🚨 Very high reading</string>
+    <string name="sugg_very_high">This reading is very high. Do not wait — contact your doctor or go to a clinic now, especially if you feel sick, are vomiting, have stomach pain, or are breathing heavily. In an emergency call 1122.</string>
+
+    <string name="sugg_disclaimer">This is general guidance, not a substitute for your doctor\'s advice.</string>
+
 </resources>
