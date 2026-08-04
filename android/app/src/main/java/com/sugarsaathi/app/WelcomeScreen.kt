@@ -15,12 +15,14 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.ui.res.stringResource
 
 @Composable
 fun WelcomeScreen(
     profile: UserProfileData,
     onChangeInfo: () -> Unit,
     onHistoryClick: () -> Unit = {},
+    onGlucoseHub: () -> Unit = {},
     chatViewModel: ChatViewModel = viewModel()
 ) {
     var goToChat by remember { mutableStateOf(false) }
@@ -59,7 +61,7 @@ fun WelcomeScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             Text(
-                text = "Welcome back,",
+                text = stringResource(R.string.welcome_back),
                 fontSize = 18.sp,
                 color = Color.White.copy(alpha = 0.85f),
                 textAlign = TextAlign.Center
@@ -125,22 +127,20 @@ fun WelcomeScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // History button
-            OutlinedButton(
-                onClick = onHistoryClick,
+            // Blood sugar tracker button
+            Button(
+                onClick = onGlucoseHub,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
-                shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.outlinedButtonColors(
-                    contentColor = Color.White
-                ),
-                border = BorderStroke(1.5.dp, Color.White.copy(alpha = 0.6f))
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFC107)),
+                shape = RoundedCornerShape(16.dp)
             ) {
                 Text(
-                    text = "Chat History 🕘",
-                    fontSize = 16.sp,
-                    color = Color.White
+                    text = "🩸  Blood Sugar Tracker",
+                    fontSize = 17.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF0D5A44)
                 )
             }
         }

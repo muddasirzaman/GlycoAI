@@ -1,3 +1,268 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+
+    <!-- Login -->
+    <string name="auth_signup_title">اپنا اکاؤنٹ بنائیں</string>
+    <string name="auth_login_title">خوش آمدید</string>
+    <string name="auth_signup_subtitle">اپنا ڈیٹا محفوظ کرنے کے لیے سائن اپ کریں</string>
+    <string name="auth_login_subtitle">جاری رکھنے کے لیے لاگ ان کریں</string>
+    <string name="email_label">ای میل</string>
+    <string name="password_label">پاس ورڈ</string>
+    <string name="create_account">اکاؤنٹ بنائیں</string>
+    <string name="log_in">لاگ ان کریں</string>
+    <string name="switch_to_login">پہلے سے اکاؤنٹ ہے؟ لاگ ان کریں</string>
+    <string name="switch_to_signup">اکاؤنٹ نہیں ہے؟ سائن اپ کریں</string>
+
+    <string name="language_label">زبان</string>
+    <string name="lang_english">English</string>
+    <string name="lang_urdu">اردو</string>
+    <string name="copied_to_clipboard">✅ کاپی ہو گیا</string>
+    <string name="copy_message">کاپی کریں</string>
+
+    <!-- Welcome / navigation -->
+    <string name="welcome_back">خوش آمدید،</string>
+    <string name="continue_button">آگے بڑھیں →</string>
+    <string name="blood_sugar_tracker">🩸  شوگر ٹریکر</string>
+
+    <!-- Purpose screen -->
+    <string name="purpose_title">آپ گلائیکو اے آئی کس مقصد کے لیے استعمال کر رہے ہیں؟</string>
+    <string name="purpose_subtitle">اس سے ہم آپ کے تجربے کو بہتر بنا سکتے ہیں۔</string>
+    <string name="purpose_patient">مجھے ذیابیطس ہے</string>
+    <string name="purpose_patient_desc">اپنی ذیابیطس کے لیے ذاتی رہنمائی حاصل کریں</string>
+    <string name="purpose_educational">میں سیکھنے آیا ہوں</string>
+    <string name="purpose_educational_desc">طبی معلومات کے بغیر ذیابیطس کے بارے میں جانیں</string>
+    <string name="purpose_professional">میں طبی ماہر ہوں</string>
+    <string name="purpose_professional_desc">ایپ کو حوالہ کے طور پر استعمال کریں</string>
+    <string name="purpose_caregiver">میں کسی مریض کی دیکھ بھال کرتا ہوں</string>
+    <string name="purpose_caregiver_desc">اپنے خاندان کے فرد کی مدد کرنا سیکھیں</string>
+
+    <!-- Onboarding -->
+    <string name="onboarding_welcome_title">گلائیکو اے آئی میں خوش آمدید</string>
+    <string name="select_language">اپنی زبان منتخب کریں</string>
+    <string name="next_button">آگے →</string>
+    <string name="back_button">← واپس</string>
+    <string name="tell_us_about_yourself">اپنے بارے میں بتائیں</string>
+    <string name="your_name">آپ کا نام</string>
+    <string name="your_age">آپ کی عمر</string>
+    <string name="gender">جنس</string>
+    <string name="male">مرد</string>
+    <string name="female">عورت</string>
+    <string name="other">دیگر</string>
+    <string name="year_diagnosed">تشخیص کا سال (اختیاری)</string>
+    <string name="blood_sugar_unit">شوگر کی اکائی</string>
+    <string name="last_hba1c">آخری HbA1c % (اختیاری)</string>
+    <string name="dont_know_hba1c">اگر معلوم نہیں تو خالی چھوڑ دیں</string>
+    <string name="diabetes_type_question">آپ کو کس قسم کی ذیابیطس ہے؟</string>
+    <string name="type1">ٹائپ 1</string>
+    <string name="type1_desc">انسولین پر انحصار</string>
+    <string name="type2">ٹائپ 2</string>
+    <string name="type2_desc">طرزِ زندگی سے متعلق</string>
+    <string name="prediabetes">قبل از ذیابیطس</string>
+    <string name="prediabetes_desc">خطرے میں</string>
+    <string name="not_sure">یقین نہیں</string>
+    <string name="not_sure_desc">مجھے اپنی قسم معلوم نہیں</string>
+    <string name="none_option">کوئی نہیں</string>
+    <string name="none_desc">سیکھنے کے لیے / کسی اور کے لیے</string>
+    <string name="start_chatting">بات چیت شروع کریں! 🚀</string>
+
+    <!-- Onboarding screens 1, 2 extras -->
+    <string name="daily_companion">آپ کا روزانہ ذیابیطس ساتھی</string>
+    <string name="english">English</string>
+    <string name="name_hint">مثلاً غلام مصطفیٰ</string>
+    <string name="age_hint">مثلاً 45</string>
+    <string name="year_hint">مثلاً 2019</string>
+    <string name="hba1c_hint">مثلاً 7.8</string>
+    <string name="step_progress">مرحلہ %1$d از 6</string>
+
+    <!-- About Yourself additions -->
+    <string name="country_region">ملک / علاقہ</string>
+    <string name="country_hint">مثلاً پاکستان</string>
+    <string name="occupation">پیشہ (اختیاری)</string>
+    <string name="occupation_hint">مثلاً استاد</string>
+    <string name="education_level">تعلیمی سطح</string>
+    <string name="edu_none">کوئی نہیں</string>
+    <string name="edu_primary">پرائمری</string>
+    <string name="edu_secondary">میٹرک</string>
+    <string name="edu_higher">اعلیٰ تعلیم</string>
+    <string name="used_chatbot">پہلے کبھی ذیابیطس اے آئی استعمال کیا؟</string>
+    <string name="answer_yes">جی ہاں</string>
+    <string name="answer_no">نہیں</string>
+
+    <!-- Health Profile screen -->
+    <string name="health_profile">صحت کی معلومات</string>
+    <string name="physical_info">جسمانی معلومات</string>
+    <string name="bmi_label">BMI</string>
+    <string name="bmi_underweight">کم وزن</string>
+    <string name="bmi_normal">نارمل</string>
+    <string name="bmi_overweight">زیادہ وزن</string>
+    <string name="bmi_obese">موٹاپا</string>
+
+    <string name="lifestyle">طرزِ زندگی</string>
+
+    <string name="activity_level">جسمانی سرگرمی کی سطح</string>
+    <string name="activity_sedentary">بیٹھے رہنے والا</string>
+    <string name="activity_light">ہلکی سرگرمی</string>
+    <string name="activity_moderate">درمیانی سرگرمی</string>
+    <string name="activity_very">بہت زیادہ سرگرم</string>
+
+    <string name="treatment_approach">آپ اپنی ذیابیطس کیسے سنبھالتے ہیں؟</string>
+    <string name="tr_oral">منہ کی دوا</string>
+    <string name="tr_insulin">انسولین</string>
+    <string name="tr_diet">پرہیز</string>
+    <string name="tr_exercise">باقاعدہ ورزش</string>
+    <string name="tr_none">کوئی نہیں</string>
+    <string name="tr_other">دیگر</string>
+
+    <string name="monitoring_method">آپ اپنی شوگر کیسے چیک کرتے ہیں؟</string>
+    <string name="mon_glucometer">گلوکومیٹر (انگلی سے)</string>
+    <string name="mon_cgm">مسلسل گلوکوز مانیٹر (CGM)</string>
+    <string name="mon_rarely">کبھی کبھار چیک کرتے ہیں</string>
+    <string name="mon_never">کبھی نہیں کرتے</string>
+
+    <string name="emergency_history">کیا آپ نے کبھی تجربہ کیا؟</string>
+    <string name="em_severe_low">شدید کم شوگر جس میں مدد کی ضرورت پڑی</string>
+    <string name="em_dka">ذیابیطس کیٹواسیڈوسس (DKA)</string>
+    <string name="em_hospital">ذیابیطس کی وجہ سے ہسپتال داخلہ</string>
+    <string name="em_none">ان میں سے کوئی نہیں</string>
+
+    <string name="diet_plan">کیا آپ کوئی خاص کھانے کا منصوبہ اپناتے ہیں؟ (اختیاری)</string>
+    <string name="diet_general">عام صحت مند غذا</string>
+    <string name="diet_lowcarb">کم کاربوہائیڈریٹ</string>
+    <string name="diet_mediterranean">میڈیٹیرینین</string>
+    <string name="diet_vegetarian">سبزی خور</string>
+    <string name="diet_vegan">ویگن</string>
+    <string name="diet_other">دیگر</string>
+
+    <!-- Screen 4: conditions -->
+    <string name="related_conditions">متعلقہ طبی حالات</string>
+    <string name="select_all_apply">جو بھی لاگو ہوں منتخب کریں</string>
+    <string name="cond_kidney">گردے کی بیماری</string>
+    <string name="cond_heart">دل کی بیماری</string>
+    <string name="cond_bp">بلند فشارِ خون</string>
+    <string name="cond_eye">آنکھوں کے مسائل / ریٹینوپیتھی</string>
+    <string name="cond_nerve">اعصابی مسائل / نیوروپیتھی</string>
+    <string name="cond_foot">پاؤں کا زخم یا سابقہ کٹاؤ</string>
+    <string name="cond_pregnant">حاملہ یا حمل کا ارادہ</string>
+    <string name="cond_none">کوئی نہیں</string>
+    <string name="cond_other">دیگر</string>
+    <string name="enter_other_condition">دیگر حالت درج کریں</string>
+    <string name="separate_commas_condition">ایک سے زیادہ حالات کوما سے الگ کریں</string>
+
+    <!-- Health metrics -->
+    <string name="weight_kg">وزن کلوگرام میں</string>
+    <string name="height_cm">قد سینٹی میٹر میں</string>
+    <string name="weight_hint">مثلاً 72</string>
+    <string name="height_hint">مثلاً 168</string>
+    <string name="smoking_status">کیا آپ سگریٹ نوشی کرتے ہیں؟</string>
+    <string name="smoke_never">کبھی نہیں</string>
+    <string name="smoke_former">پہلے کرتے تھے</string>
+    <string name="smoke_current">اب بھی کرتے ہیں</string>
+
+    <!-- Screen 5: medications -->
+    <string name="current_medications">موجودہ ادویات</string>
+    <string name="med_none">کوئی نہیں</string>
+    <string name="med_other">دیگر</string>
+    <string name="enter_medicine_names">دوا کا نام درج کریں</string>
+    <string name="separate_commas_medicine">ایک سے زیادہ ادویات کوما سے الگ کریں</string>
+
+    <!-- Chat screen -->
+    <string name="chat_subtitle">آپ کا روزانہ ذیابیطس ساتھی</string>
+    <string name="type_question">اپنا سوال لکھیں...</string>
+    <string name="thinking">جواب آ رہا ہے...</string>
+    <string name="chat_hello">السلام علیکم، %1$s! 👋</string>
+    <string name="chat_intro">میں گلائیکو اے آئی ہوں۔ ذیابیطس کے بارے میں کچھ بھی پوچھیں!</string>
+    <string name="voice">آواز</string>
+    <string name="gallery">گیلری</string>
+    <string name="camera">کیمرہ</string>
+    <string name="document">دستاویز</string>
+
+    <!-- Bottom tabs -->
+    <string name="tab_chat">بات چیت</string>
+    <string name="tab_tracker">ٹریکر</string>
+    <string name="tab_history">تاریخ</string>
+    <string name="tab_profile">پروفائل</string>
+
+    <!-- Profile tab -->
+    <string name="profile_name">نام: %1$s</string>
+    <string name="profile_age">عمر: %1$d</string>
+    <string name="profile_diabetes">ذیابیطس: %1$s</string>
+    <string name="edit_my_information">میری معلومات میں تبدیلی</string>
+
+    <!-- Glucose hub -->
+    <string name="tracker_title">شوگر ٹریکر</string>
+    <string name="track_blood_sugar">اپنی شوگر ٹریک کریں</string>
+    <string name="log_and_progress">ریڈنگ درج کریں اور اپنی پیش رفت دیکھیں</string>
+    <string name="add_reading">＋  ریڈنگ شامل کریں</string>
+    <string name="view_my_readings">📊  میری ریڈنگز دیکھیں</string>
+
+    <!-- Add reading screen -->
+    <string name="add_glucose_reading">شوگر ریڈنگ شامل کریں</string>
+    <string name="blood_glucose_reading">خون میں شوگر کی ریڈنگ</string>
+    <string name="glucose_hint">مثلاً 120</string>
+    <string name="when_taken">یہ کب لی گئی؟</string>
+    <string name="notes_optional">نوٹس (اختیاری)</string>
+    <string name="type_own_note">یا اپنا نوٹ لکھیں</string>
+    <string name="save_reading">ریڈنگ محفوظ کریں</string>
+    <string name="enter_valid_number">براہ کرم درست نمبر درج کریں۔</string>
+    <string name="range_error_mgdl">ریڈنگ 20 اور 700 mg/dL کے درمیان ہونی چاہیے۔</string>
+    <string name="range_error_mmol">ریڈنگ 1 اور 40 mmol/L کے درمیان ہونی چاہیے۔</string>
+
+    <!-- Reading types -->
+    <string name="rt_fasting">نہار منہ</string>
+    <string name="rt_before_breakfast">ناشتے سے پہلے</string>
+    <string name="rt_after_breakfast">ناشتے کے بعد</string>
+    <string name="rt_before_lunch">دوپہر کے کھانے سے پہلے</string>
+    <string name="rt_after_lunch">دوپہر کے کھانے کے بعد</string>
+    <string name="rt_before_dinner">رات کے کھانے سے پہلے</string>
+    <string name="rt_after_dinner">رات کے کھانے کے بعد</string>
+    <string name="rt_bedtime">سونے سے پہلے</string>
+    <string name="rt_random">کسی بھی وقت</string>
+
+    <!-- Quick notes -->
+    <string name="qn_dizzy">چکر آ رہے ہیں</string>
+    <string name="qn_sweets">میٹھا کھایا</string>
+    <string name="qn_exercised">ورزش کی</string>
+    <string name="qn_missed_med">دوا رہ گئی</string>
+
+    <!-- History screen -->
+    <string name="glucose_history">شوگر کی تاریخ</string>
+    <string name="no_readings_yet">ابھی کوئی ریڈنگ نہیں۔\nریڈنگ درج کرنے کے لیے \'ریڈنگ شامل کریں\' دبائیں۔</string>
+    <string name="last_7_days">پچھلے 7 دن</string>
+    <string name="stat_average">اوسط</string>
+    <string name="stat_highest">سب سے زیادہ</string>
+    <string name="stat_lowest">سب سے کم</string>
+    <string name="stat_readings">ریڈنگز</string>
+    <string name="stat_in_range">ہدف کے اندر</string>
+    <string name="no_readings_7days">پچھلے 7 دنوں میں کوئی ریڈنگ نہیں۔</string>
+    <string name="status_low">کم</string>
+    <string name="status_normal">نارمل</string>
+    <string name="status_borderline">حد پر</string>
+    <string name="status_high">زیادہ</string>
+
+    <!-- Glucose suggestions -->
+    <string name="sugg_severe_low_title">⚠️ شوگر بہت کم ہے</string>
+    <string name="sugg_severe_low">آپ کی شوگر خطرناک حد تک کم ہے۔ فوراً میٹھی چیز لیں — جوس، عام کولڈ ڈرنک، یا گلوکوز کی گولیاں۔ گھر میں کسی کو بتائیں۔ 15 منٹ بعد دوبارہ چیک کریں۔ اگر غنودگی یا الجھن محسوس ہو تو فوری طبی مدد لیں (1122)۔</string>
+
+    <string name="sugg_low_title">🟠 شوگر کم ہے</string>
+    <string name="sugg_low">آپ کی شوگر ہدف سے کم ہے۔ ابھی میٹھی چیز لیں — آدھا گلاس جوس، عام کولڈ ڈرنک، یا گلوکوز کی گولیاں — پھر 15 منٹ بعد چیک کریں۔ اگر پھر بھی کم ہو تو دہرائیں۔ حالت بہتر نہ ہو تو ڈاکٹر سے رابطہ کریں۔</string>
+
+    <string name="sugg_in_range_title">🎉 بہترین</string>
+    <string name="sugg_in_range_1">شاباش — آپ کی ریڈنگ ہدف کے اندر ہے۔ اپنا کھانا، سرگرمی اور دوائیں اسی طرح جاری رکھیں۔ 💚</string>
+    <string name="sugg_in_range_2">بہت خوب۔ یہ بالکل درست حد میں ہے۔ ایسی پابندی ہی آپ کی صحت کی حفاظت کرتی ہے۔ 😊</string>
+    <string name="sugg_in_range_3">آپ کی شوگر ہدف میں ہے — یہ ایک حقیقی کامیابی ہے۔ جو کر رہے ہیں جاری رکھیں۔ 🍎</string>
+
+    <string name="sugg_slightly_high_title">🟡 تھوڑی زیادہ</string>
+    <string name="sugg_slightly_high_1">ہدف سے تھوڑی زیادہ — ایسا سب کے ساتھ ہوتا ہے۔ پانی پئیں 💧، اور اگر طبیعت ٹھیک ہو تو تھوڑی چہل قدمی مدد دے سکتی ہے۔ 🚶</string>
+    <string name="sugg_slightly_high_2">اس وقت تھوڑی زیادہ ہے۔ پانی پیتے رہیں، میٹھی چیزوں سے پرہیز کریں، اور دوائیں وقت پر لیں۔</string>
+    <string name="sugg_slightly_high_3">یہ ریڈنگ ہدف سے کچھ زیادہ ہے۔ اکیلی ریڈنگ پریشانی کی بات نہیں — چیک کرتے رہیں۔</string>
+
+    <string name="sugg_high_title">🔴 شوگر زیادہ ہے</string>
+    <string name="sugg_high">آپ کی شوگر زیادہ ہے۔ پرسکون رہیں، پانی پئیں، اور میٹھا نہ کھائیں۔ کچھ گھنٹوں بعد دوبارہ چیک کریں۔ اگر زیادہ ہی رہے یا طبیعت خراب ہو — شدید پیاس، متلی، یا سانس میں دشواری — تو ڈاکٹر سے رابطہ کریں۔</string>
+
+    <string name="sugg_very_high_title">🚨 شوگر بہت زیادہ ہے</string>
+    <string name="sugg_very_high">یہ ریڈنگ بہت زیادہ ہے۔ انتظار نہ کریں — ابھی ڈاکٹر یا کلینک سے رجوع کریں، خاص طور پر اگر قے، پیٹ میں درد، یا تیز سانس ہو۔ ہنگامی صورت میں 1122 پر کال کریں۔</string>
+
+    <string name="sugg_disclaimer">یہ عمومی رہنمائی ہے، ڈاکٹر کے مشورے کا متبادل نہیں۔</string>
+
+
 </resources>

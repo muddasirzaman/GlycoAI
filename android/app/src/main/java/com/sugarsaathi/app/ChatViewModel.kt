@@ -20,8 +20,15 @@ class ChatViewModel : ViewModel() {
 
     private var historyRepo: ChatHistoryRepository? = null
 
+    private var profileRepo: ProfileRepository? = null
     fun initHistory(context: Context) {
         historyRepo = ChatHistoryRepository(context)
+
+
+    }
+
+    fun initProfileRepo(context: Context) {
+        profileRepo = ProfileRepository(context)
     }
 
     fun saveCurrentSession() {
@@ -31,9 +38,45 @@ class ChatViewModel : ViewModel() {
         }
     }
 
+    fun extractAndSaveFacts(profile: UserProfileData) {
+        val messages = _uiState.value.messages
+        if (messages.size < 2) return
+
+        viewModelScope.launch {
+            try {
+                val conversation = messages.map {
+                    mapOf("role" to it.role, "content" to it.content)
+                }
+
+                val result = NetworkModule.apiService.extractFacts(
+                    ExtractRequest(
+                        conversation = conversation,
+                        existing_facts = profile.knownFacts
+                    )
+                )
+
+                profileRepo?.saveFacts(result.facts)
+
+            } catch (e: Exception) {
+                // Extraction is best-effort; never disrupt the user
+                println("Fact extraction failed: ${e.message}")
+            }
+        }
+    }
+
+    private var lastFailedRetry: (() -> Unit)? = null
+
+    fun retryLastMessage() {
+        val retry = lastFailedRetry ?: return
+        lastFailedRetry = null
+        _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
+        retry()
+    }
+
     fun sendMessage(
         userText: String,
         profile: UserProfileData,
+        glucoseSummary: String? = null,
         imageBase64: String? = null,
         imageMimeType: String? = null,
         documentBase64: String? = null,
@@ -41,67 +84,38 @@ class ChatViewModel : ViewModel() {
         documentName: String? = null
     ) {
         if (userText.isBlank() && imageBase64 == null && documentBase64 == null) return
-
         val userMessage = Message(role = "user", content = userText)
         val currentMessages = _uiState.value.messages + userMessage
+        _uiState.value = _uiState.value.copy(messages = currentMessages, isLoading = true, errorMessage = null)
+        performSend(currentMessages, userText, profile, glucoseSummary, imageBase64, imageMimeType, documentBase64, documentMimeType, documentName)
+    }
 
-        _uiState.value = _uiState.value.copy(
-            messages = currentMessages,
-            isLoading = true,
-            errorMessage = null
-        )
-
+    private fun performSend(
+        currentMessages: List<Message>, userText: String, profile: UserProfileData,
+        glucoseSummary: String?, imageBase64: String?, imageMimeType: String?,
+        documentBase64: String?, documentMimeType: String?, documentName: String?
+    ) {
         viewModelScope.launch {
             try {
-                val history = currentMessages.dropLast(1).map {
-                    mapOf("role" to it.role, "content" to it.content)
-                }
-
-                val profileData = ProfileData(
-                    name = profile.name,
-                    age = profile.age,
-                    diabetes_type = profile.diabetesType,
-                    hba1c = null,
-                    medications = profile.medications,
-                    complications = emptyList(),
-                    language = profile.language,
-                    response_style = "simple"
-                )
-
+                val history = currentMessages.dropLast(1).map { mapOf("role" to it.role, "content" to it.content) }
+                val profileData = profile.toApiProfileData(glucoseSummary)
                 val request = ChatRequest(
-                    message = userText,
-                    profile = profileData,
-                    conversation_history = history,
-                    image_data = imageBase64,
-                    image_type = imageMimeType,
-                    document_data = documentBase64,
-                    document_type = documentMimeType,
-                    document_name = documentName
+                    message = userText, profile = profileData, conversation_history = history,
+                    image_data = imageBase64, image_type = imageMimeType,
+                    document_data = documentBase64, document_type = documentMimeType, document_name = documentName
                 )
-
                 val response = NetworkModule.apiService.sendMessage(request)
-
-                val aiMessage = Message(
-                    role = "assistant",
-                    content = response.response
-                )
-
+                val aiMessage = Message(role = "assistant", content = response.response)
                 val updatedMessages = currentMessages + aiMessage
-
-                _uiState.value = _uiState.value.copy(
-                    messages = updatedMessages,
-                    isLoading = false
-                )
-
-                // Auto-save after every AI response
+                lastFailedRetry = null
+                _uiState.value = _uiState.value.copy(messages = updatedMessages, isLoading = false)
                 historyRepo?.saveSession(updatedMessages)
-
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    errorMessage = "Connection error: ${e.message}"
-                )
+                e.printStackTrace()
+                lastFailedRetry = { performSend(currentMessages, userText, profile, glucoseSummary, imageBase64, imageMimeType, documentBase64, documentMimeType, documentName) }
+                _uiState.value = _uiState.value.copy(isLoading = false, errorMessage = friendlyNetworkMessage(e))
             }
         }
     }
 }
+
