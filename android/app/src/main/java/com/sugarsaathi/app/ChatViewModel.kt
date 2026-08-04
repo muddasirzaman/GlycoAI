@@ -13,6 +13,7 @@ data class ChatUiState(
     val errorMessage: String? = null
 )
 
+
 class ChatViewModel : ViewModel() {
 
     private val _uiState = MutableStateFlow(ChatUiState())

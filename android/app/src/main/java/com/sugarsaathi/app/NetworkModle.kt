@@ -18,6 +18,16 @@ interface ApiService {
 
 }
 
+        @POST("api/v1/chat")
+        suspend fun sendMessage(@Body request: ChatRequest): ChatResponse
+
+        @POST("api/v1/extract-facts")
+        suspend fun extractFacts(@Body request: ExtractRequest): ExtractResponse
+
+        @POST("api/v1/tips")
+        suspend fun getTips(@Body request: TipsRequest): TipsResponse
+
+}
 object NetworkModule {
 
     // Now pointing at your real Railway deployment — works from any phone,

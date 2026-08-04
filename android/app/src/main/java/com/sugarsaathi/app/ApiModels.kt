@@ -28,6 +28,35 @@ data class ProfileData(
 
 )
 
+// Converts the app's onboarding profile into the shape the backend expects.
+// (Same mapping ChatViewModel.kt builds by hand when sending chat messages.)
+fun UserProfileData.toApiProfileData(glucoseSummary: String? = null): ProfileData {
+    return ProfileData(
+        name = name,
+        age = age,
+        sex = sex,
+        country = country,
+        diabetes_type = diabetesType,
+        diagnosis_year = diagnosisYear,
+        insulin_type = insulinType,
+        medications = medications,
+        glucose_monitoring = glucoseMonitoring,
+        severe_hypoglycemia = severeHypoglycemia,
+        other_conditions = otherConditions,
+        hba1c = hba1c,
+        complications = complications,
+        language = language,
+        response_style = responseStyle,
+        glucose_unit = glucoseUnit,
+        known_facts = knownFacts,
+        weight_kg = weightKg,
+        height_cm = heightCm,
+        smoking_status = smokingStatus,
+        purpose = purpose,
+        glucose_summary = glucoseSummary,
+    )
+}
+
 data class ChatRequest(
     val message: String,
     val profile: ProfileData,
