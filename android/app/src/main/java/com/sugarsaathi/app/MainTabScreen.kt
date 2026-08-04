@@ -33,6 +33,11 @@ fun MainTabScreen(
     onEditProfile: () -> Unit
 ) {
     Scaffold(
+        // 🔧 FIX: stop Scaffold from reserving keyboard space itself.
+        // ChatScreen already handles the keyboard with its own .imePadding(),
+        // so without this line the bottom space gets reserved TWICE,
+        // causing the extra gap above the keyboard.
+        contentWindowInsets = ScaffoldDefaults.contentWindowInsets.exclude(WindowInsets.ime),
         bottomBar = {
             NavigationBar(containerColor = Color.White) {
                 NavigationBarItem(

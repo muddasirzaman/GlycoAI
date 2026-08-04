@@ -237,7 +237,6 @@ fun ChatScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .navigationBarsPadding()
             .imePadding()
     ) {
         TopAppBar(
