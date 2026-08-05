@@ -908,6 +908,91 @@ Example: ["Patient walks 30 minutes daily", "Patient uses a glucometer twice a w
         return {"facts": request.existing_facts}
 
 # =====================================================
+# Personalized Tips Endpoint
+# =====================================================
+
+class TipsRequest(BaseModel):
+    profile: ProfileData
+
+
+@app.post("/api/v1/tips")
+async def get_tips(request: TipsRequest):
+
+    p = request.profile
+
+    context = f"Age {p.age}, {p.sex}, diabetes type: {p.diabetes_type}."
+    if p.medications:
+        context += f" Medicines: {', '.join(p.medications)}."
+    if p.other_conditions:
+        context += f" Other conditions: {', '.join(p.other_conditions)}."
+    if p.hba1c is not None:
+        context += f" HbA1c: {p.hba1c}%."
+    if p.glucose_summary:
+        context += f" Recent glucose: {p.glucose_summary}"
+    if p.smoking_status == "Current":
+        context += " Patient currently smokes."
+
+    language_note = "Write in Urdu script." if p.language == "ur" else "Write in simple English."
+
+    role_note = {
+        "patient": "These are for a person managing their own diabetes.",
+        "educational": "These are general educational facts for a student, not personal advice.",
+        "professional": "These are clinical practice points for a healthcare professional.",
+        "caregiver": "These are practical points for someone caring for a person with diabetes.",
+    }.get(p.purpose, "These are for a person managing their own diabetes.")
+
+    tips_prompt = f"""Write 6 short, practical diabetes tips.
+
+PERSON: {context}
+CONTEXT: {role_note}
+LANGUAGE: {language_note}
+
+RULES:
+- Each tip one or two sentences, plain and specific.
+- Tailor to this person's actual profile above - mention their conditions
+  or medicines where relevant.
+- Never recommend medication or insulin doses.
+- Never diagnose.
+- Practical and encouraging, not frightening.
+- Suitable for Pakistan: mention local foods and habits where natural.
+
+Return ONLY a JSON array of 6 strings, no other text.
+Example: ["Walk for 20 minutes after dinner.", "Check your feet daily for cuts."]
+"""
+
+    try:
+        response = client.messages.create(
+            model="claude-haiku-4-5",
+            max_tokens=900,
+            temperature=0.7,
+            messages=[{"role": "user", "content": tips_prompt}]
+        )
+
+        raw = response.content[0].text.strip()
+        raw = raw.removeprefix("```json").removeprefix("```").removesuffix("```").strip()
+
+        import json
+        tips = json.loads(raw)
+
+        if not isinstance(tips, list):
+            raise ValueError("not a list")
+
+        clean = [str(t).strip() for t in tips if str(t).strip()][:8]
+        return {"tips": clean}
+
+    except Exception as e:
+        print("TIPS ERROR:", e)
+        return {"tips": [
+            "Check your blood sugar regularly and write down the readings.",
+            "Take your medicines at the same time each day.",
+            "Walk for 20 to 30 minutes most days if your doctor agrees.",
+            "Drink water instead of sugary drinks and juices.",
+            "Check your feet every day for cuts or sores.",
+            "Keep your regular appointments with your doctor."
+        ]}
+
+
+# =====================================================
 # Health Check
 # =====================================================
 
