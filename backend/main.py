@@ -337,7 +337,7 @@ Never present a URL you are not certain of. A named source with no link is
 always better than a fabricated link.
 """
 
-prompt += """
+    prompt += """
 
 OUTPUT FORMATTING
 
