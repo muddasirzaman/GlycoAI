@@ -56,6 +56,10 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.foundation.clickable
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.ui.text.style.TextOverflow
 
 val TealGreen = Color(0xFF1D9E75)
 
@@ -237,9 +241,10 @@ fun ChatScreen(
     }
 
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .imePadding()
+        modifier = Modifier.fillMaxSize()
+        // NOTE: no imePadding / navigationBarsPadding here on purpose.
+        // MainTabScreen's Scaffold owns all bottom inset handling. Adding it
+        // here as well was what reserved the space twice and left the gap.
     ) {
         TopAppBar(
             title = {
@@ -271,8 +276,6 @@ fun ChatScreen(
             )
         )
 
-        DailyTipsCard(language = userProfile.language)
-
         LazyColumn(
             state = listState,
             modifier = Modifier
@@ -281,9 +284,13 @@ fun ChatScreen(
             verticalArrangement = Arrangement.spacedBy(8.dp),
             contentPadding = PaddingValues(vertical = 12.dp)
         ) {
+            item { DailyTipsCard(language = userProfile.language) }
+
+            // FIX: this block was duplicated, which printed "Hello, Friend!" twice.
             if (uiState.messages.isEmpty()) {
                 item { WelcomeMessage(name = userProfile.name) }
             }
+
             items(uiState.messages) { message ->
                 MessageBubble(
                     message = message,
@@ -299,11 +306,20 @@ fun ChatScreen(
 
         uiState.errorMessage?.let { error ->
             Row(
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp).fillMaxWidth(),
+                modifier = Modifier
+                    .padding(horizontal = 16.dp, vertical = 4.dp)
+                    .fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(text = error, color = MaterialTheme.colorScheme.error, fontSize = 12.sp, modifier = Modifier.weight(1f))
-                TextButton(onClick = { chatViewModel.retryLastMessage() }) { Text("Retry", color = TealGreen, fontSize = 12.sp) }
+                Text(
+                    text = error,
+                    color = MaterialTheme.colorScheme.error,
+                    fontSize = 12.sp,
+                    modifier = Modifier.weight(1f)
+                )
+                TextButton(onClick = { chatViewModel.retryLastMessage() }) {
+                    Text("Retry", color = TealGreen, fontSize = 12.sp)
+                }
             }
         }
 
@@ -429,6 +445,23 @@ fun ChatScreen(
             }
         }
 
+        // Quick replies - tappable answers to the assistant's question, or
+        // suggested follow-ups. Hidden while loading and while a speed-dial
+        // attachment menu is open, so the input area never gets crowded.
+        if (uiState.quickReplies.isNotEmpty() && !uiState.isLoading && !expanded) {
+            QuickReplyRow(
+                replies = uiState.quickReplies,
+                onReplyClick = { reply ->
+                    inputText = ""
+                    chatViewModel.sendMessage(
+                        userText = reply,
+                        profile = userProfile,
+                        glucoseSummary = glucoseViewModel?.glucoseSummaryForAI()
+                    )
+                }
+            )
+        }
+
         // Input row
         Row(
             modifier = Modifier
@@ -450,13 +483,21 @@ fun ChatScreen(
                 )
             }
 
+            // FIX: fixed font size + minimum height so descenders are not clipped
+            // when the user has a large system font scale set.
             OutlinedTextField(
                 value = inputText,
                 onValueChange = { inputText = it },
                 placeholder = {
-                    Text(stringResource(R.string.type_question))
+                    Text(stringResource(R.string.type_question), fontSize = 15.sp)
                 },
-                modifier = Modifier.weight(1f),
+                modifier = Modifier
+                    .weight(1f)
+                    .heightIn(min = 52.dp),
+                textStyle = LocalTextStyle.current.copy(
+                    fontSize = 15.sp,
+                    lineHeight = 20.sp
+                ),
                 shape = RoundedCornerShape(24.dp),
                 maxLines = 3,
                 colors = OutlinedTextFieldDefaults.colors(
@@ -478,6 +519,46 @@ fun ChatScreen(
                     imageVector = Icons.AutoMirrored.Filled.Send,
                     contentDescription = "Send",
                     tint = Color.White
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Horizontally scrollable row of tappable suggestions.
+ *
+ * When the assistant asks a clarifying question these are likely answers
+ * (including an "I don't know" escape, supplied by the backend). Otherwise
+ * they are follow-up questions the user may want to ask next.
+ */
+@Composable
+fun QuickReplyRow(
+    replies: List<String>,
+    onReplyClick: (String) -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState())
+            .padding(horizontal = 12.dp)
+            .padding(bottom = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        replies.forEach { reply ->
+            Surface(
+                onClick = { onReplyClick(reply) },
+                shape = RoundedCornerShape(18.dp),
+                color = Color(0xFFE1F5EE),
+                border = BorderStroke(1.dp, TealGreen.copy(alpha = 0.45f))
+            ) {
+                Text(
+                    text = reply,
+                    color = Color(0xFF0D5A44),
+                    fontSize = 13.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 9.dp)
                 )
             }
         }
@@ -649,9 +730,11 @@ fun DailyTipsCard(language: String) {
     if (tips.isEmpty()) return
 
     Card(
+        // FIX: horizontal padding removed — the LazyColumn already applies 12.dp,
+        // which was doubling the side margins on this card only.
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 12.dp, vertical = 6.dp),
+            .padding(vertical = 6.dp),
         colors = CardDefaults.cardColors(containerColor = Color(0xFFE1F5EE)),
         shape = RoundedCornerShape(14.dp)
     ) {

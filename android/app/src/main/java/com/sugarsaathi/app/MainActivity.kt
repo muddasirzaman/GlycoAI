@@ -1,6 +1,6 @@
 package com.sugarsaathi.app
 
-import android.os.Bundle
+import      android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.*
@@ -21,6 +21,7 @@ import java.util.concurrent.TimeUnit
 import java.util.Locale
 import android.content.res.Configuration
 import android.content.Context
+import androidx.activity.enableEdgeToEdge
 
 class MainActivity : ComponentActivity() {
 
@@ -37,7 +38,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
+            enableEdgeToEdge()          // <-- add this
         if (
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
             ContextCompat.checkSelfPermission(

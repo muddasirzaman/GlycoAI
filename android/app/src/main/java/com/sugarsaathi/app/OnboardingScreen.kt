@@ -1,4 +1,5 @@
 package com.sugarsaathi.app
+
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -21,6 +22,10 @@ import java.util.Locale
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
 
+// Brands in the medication list that are insulins. Selecting any of these
+// means the insulin-type question is relevant even for type 2.
+private val INSULIN_BRANDS = setOf("Mixtard", "Lantus")
+
 @Composable
 fun OnboardingScreen(onComplete: (UserProfileData) -> Unit) {
 
@@ -36,9 +41,7 @@ fun OnboardingScreen(onComplete: (UserProfileData) -> Unit) {
     var selectedMeds by remember { mutableStateOf(setOf<String>()) }
     var otherMedicine by remember { mutableStateOf("") }
     var complicationText by remember { mutableStateOf("") }
-    var selectedConditions by remember {
-        mutableStateOf(setOf<String>())
-    }
+    var selectedConditions by remember { mutableStateOf(setOf<String>()) }
     var weight by remember { mutableStateOf("") }
     var height by remember { mutableStateOf("") }
     var smoking by remember { mutableStateOf("") }
@@ -48,6 +51,9 @@ fun OnboardingScreen(onComplete: (UserProfileData) -> Unit) {
     var emergencies by remember { mutableStateOf(setOf<String>()) }
     var dietPlan by remember { mutableStateOf("") }
     var purpose by remember { mutableStateOf("") }
+
+    // NEW: optional, and only asked when insulin is actually relevant.
+    var insulinType by remember { mutableStateOf("") }
 
     // Build a context whose locale follows the chosen language — live, no restart
     val layoutDirection = if (language == "ur") LayoutDirection.Rtl else LayoutDirection.Ltr
@@ -63,7 +69,7 @@ fun OnboardingScreen(onComplete: (UserProfileData) -> Unit) {
     CompositionLocalProvider(
         LocalContext provides localizedContext,
         LocalConfiguration provides localizedContext.resources.configuration,
-                LocalLayoutDirection provides layoutDirection
+        LocalLayoutDirection provides layoutDirection
     ) {
         Column(
             modifier = Modifier
@@ -114,6 +120,7 @@ fun OnboardingScreen(onComplete: (UserProfileData) -> Unit) {
                         }
                     }
                 )
+
                 3 -> Screen2BasicInfo(
                     name = name,
                     age = age,
@@ -201,6 +208,9 @@ fun OnboardingScreen(onComplete: (UserProfileData) -> Unit) {
                 7 -> Screen5Medications(
                     selectedMeds = selectedMeds,
                     otherMedicine = otherMedicine,
+                    diabetesType = diabetesType,
+                    insulinType = insulinType,
+                    onInsulinTypeChange = { insulinType = it },
                     onOtherMedicineChange = { otherMedicine = it },
 
                     onMedToggle = { med ->
@@ -226,6 +236,14 @@ fun OnboardingScreen(onComplete: (UserProfileData) -> Unit) {
                         if (med == "Other" && wasSelected) {
                             otherMedicine = ""
                         }
+
+                        // If insulin is deselected entirely and they are not
+                        // type 1, the answer no longer applies - clear it so a
+                        // stale value never reaches the assistant.
+                        val stillOnInsulin = (selectedMeds - "None").any { it in INSULIN_BRANDS }
+                        if (!stillOnInsulin && diabetesType != "type1") {
+                            insulinType = ""
+                        }
                     },
 
                     onBack = { currentScreen = 6 },
@@ -249,6 +267,10 @@ fun OnboardingScreen(onComplete: (UserProfileData) -> Unit) {
                                 monitoringMethod = monitoring,
                                 emergencyHistory = emergencies.toList(),
                                 dietPlan = dietPlan,
+
+                                // NEW: optional - null when not asked or not answered
+                                insulinType = insulinType.ifBlank { null },
+
                                 medications = selectedMeds
                                     .filter { it != "Other" && it != "None" }
                                     .plus(
@@ -263,13 +285,22 @@ fun OnboardingScreen(onComplete: (UserProfileData) -> Unit) {
                                             complicationText.split(",").map { it.trim() }.filter { it.isNotEmpty() }
                                         } else emptyList()
                                     ),
+
+                                // Send the same list as otherConditions too, so the
+                                // backend's kidney / heart / BP rules see them.
+                                otherConditions = selectedConditions
+                                    .filter { it != "Other" && it != "None" }
+                                    .plus(
+                                        if ("Other" in selectedConditions) {
+                                            complicationText.split(",").map { it.trim() }.filter { it.isNotEmpty() }
+                                        } else emptyList()
+                                    ),
+
                                 onboardingDone = true
                             )
                         )
                     }
                 )
-
-
             }
         }
     }
@@ -494,7 +525,6 @@ fun Screen3DiabetesType(
     onNext: () -> Unit,
     onBack: () -> Unit
 ) {
-    // Resolve strings first (stringResource can't run inside listOf)
     val types = listOf(
         Triple("type1", stringResource(R.string.type1), stringResource(R.string.type1_desc)),
         Triple("type2", stringResource(R.string.type2), stringResource(R.string.type2_desc)),
@@ -570,7 +600,6 @@ fun Screen4Conditions(
     onBack: () -> Unit,
     onNext: () -> Unit
 ) {
-    // English value paired with translated label
     val conditions = listOf(
         "Kidney disease" to stringResource(R.string.cond_kidney),
         "Heart disease" to stringResource(R.string.cond_heart),
@@ -652,18 +681,20 @@ fun Screen4Conditions(
     }
 }
 
-// ─── Screen 5: Medications ────────────────────────────
+// ─── Screen 5: Medications (+ conditional insulin type) ───────
 
 @Composable
 fun Screen5Medications(
     selectedMeds: Set<String>,
     otherMedicine: String,
+    diabetesType: String,
+    insulinType: String,
+    onInsulinTypeChange: (String) -> Unit,
     onOtherMedicineChange: (String) -> Unit,
     onMedToggle: (String) -> Unit,
     onBack: () -> Unit,
     onFinish: () -> Unit
 ) {
-    // Drug brand names stay as-is; only None/Other translate
     val medications = listOf(
         "Glucophage" to "Glucophage",
         "Mixtard" to "Mixtard",
@@ -672,6 +703,20 @@ fun Screen5Medications(
         "Lantus" to "Lantus",
         "None" to stringResource(R.string.med_none),
         "Other" to stringResource(R.string.med_other)
+    )
+
+    // Only ask about insulin type when insulin is actually in the picture.
+    val onInsulin = selectedMeds.any { it in INSULIN_BRANDS }
+    val showInsulinQuestion = diabetesType == "type1" || onInsulin
+
+    val insulinOptions = listOf(
+        "Rapid-acting" to "Rapid-acting (NovoRapid, Humalog)",
+        "Short-acting" to "Short-acting / Regular (Actrapid)",
+        "Intermediate" to "Intermediate (NPH, Insulatard)",
+        "Long-acting" to "Long-acting (Lantus, Levemir)",
+        "Premixed" to "Premixed (Mixtard, Novomix)",
+        "Multiple" to "More than one type",
+        "Unknown" to "I don't know"
     )
 
     Column(
@@ -722,6 +767,44 @@ fun Screen5Medications(
             )
             Spacer(modifier = Modifier.height(8.dp))
         }
+
+        // ── Conditional: insulin type ───────────────────────────
+        if (showInsulinQuestion) {
+            Spacer(modifier = Modifier.height(24.dp))
+            HorizontalDivider()
+            Spacer(modifier = Modifier.height(20.dp))
+
+            Text(
+                text = "Which insulin do you use?",
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = "Optional - it helps give safer advice about food and timing. " +
+                        "Skip it if you are not sure.",
+                fontSize = 13.sp,
+                color = Color.Gray,
+                textAlign = TextAlign.Center
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+
+            insulinOptions.forEach { (value, label) ->
+                SelectableCard(
+                    title = label,
+                    subtitle = "",
+                    isSelected = insulinType == value,
+                    onClick = {
+                        // Tapping the selected one again clears it - keeps the
+                        // field genuinely optional.
+                        onInsulinTypeChange(if (insulinType == value) "" else value)
+                    }
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+            }
+        }
+
         Spacer(modifier = Modifier.height(24.dp))
 
         Row(
@@ -738,7 +821,9 @@ fun Screen5Medications(
                 onClick = onFinish,
                 modifier = Modifier.weight(2f),
                 colors = ButtonDefaults.buttonColors(containerColor = TealGreen),
-                enabled = selectedMeds.isNotEmpty() && ("Other" !in selectedMeds || otherMedicine.isNotBlank())
+                // Insulin type stays optional - it never blocks finishing.
+                enabled = selectedMeds.isNotEmpty() &&
+                        ("Other" !in selectedMeds || otherMedicine.isNotBlank())
             ) {
                 Text(stringResource(R.string.start_chatting))
             }

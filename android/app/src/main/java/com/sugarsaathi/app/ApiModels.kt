@@ -39,9 +39,20 @@ fun UserProfileData.toApiProfileData(glucoseSummary: String? = null): ProfileDat
         diagnosis_year = diagnosisYear,
         insulin_type = insulinType,
         medications = medications,
-        glucose_monitoring = glucoseMonitoring,
-        severe_hypoglycemia = severeHypoglycemia,
-        other_conditions = otherConditions,
+
+        // FIX: onboarding stores these in monitoringMethod / emergencyHistory.
+        // The old mapping read glucoseMonitoring / severeHypoglycemia, which
+        // onboarding never sets, so the backend always saw null.
+        glucose_monitoring = glucoseMonitoring
+            ?: monitoringMethod.ifBlank { null },
+        severe_hypoglycemia = severeHypoglycemia
+            ?: emergencyHistory.joinToString(", ").ifBlank { null },
+
+        // FIX: the onboarding conditions screen writes everything into
+        // `complications`, but the backend's kidney / heart / BP rules read
+        // `other_conditions`. Send the union so those rules actually fire.
+        other_conditions = (otherConditions + complications).distinct(),
+
         hba1c = hba1c,
         complications = complications,
         language = language,
@@ -67,11 +78,24 @@ data class ChatRequest(
     val document_name: String? = null
 )
 
-// What we receive FROM the server
+// What we receive FROM the server.
+//
+// IMPORTANT: every new field is nullable on purpose. Gson does NOT apply Kotlin
+// default values - it allocates the object directly, so a field missing from the
+// JSON stays null even when the Kotlin type says non-null. Declaring these as
+// non-null List/Boolean would throw at runtime against an older backend.
+// Nullable + the helper accessors below keeps old and new servers both working.
 data class ChatResponse(
     val response: String,
-    val safety_triggered: Boolean
-)
+    val safety_triggered: Boolean? = null,
+    val needs_context: Boolean? = null,
+    val quick_replies: List<String>? = null,
+    val tier: String? = null
+) {
+    val safetyTriggered: Boolean get() = safety_triggered == true
+    val needsContext: Boolean get() = needs_context == true
+    val quickReplies: List<String> get() = quick_replies.orEmpty()
+}
 
 // A single chat message (user or AI)
 data class Message(
@@ -87,4 +111,3 @@ data class ExtractRequest(
 data class ExtractResponse(
     val facts: List<String>
 )
-

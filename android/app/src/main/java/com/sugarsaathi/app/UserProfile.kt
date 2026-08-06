@@ -36,6 +36,11 @@ object ProfileKeys {
     val EMERGENCY_HISTORY = stringPreferencesKey("emergency_history")
     val DIET_PLAN = stringPreferencesKey("diet_plan")
     val PURPOSE = stringPreferencesKey("purpose")
+
+    // FIX: these two existed on UserProfileData but were never persisted,
+    // so insulin type was always null and other conditions always empty.
+    val INSULIN_TYPE = stringPreferencesKey("insulin_type")
+    val OTHER_CONDITIONS = stringPreferencesKey("other_conditions")
 }
 
 
@@ -95,7 +100,7 @@ class ProfileRepository(private val context: Context) {
                 .filter { it.isNotEmpty() },
             onboardingDone = prefs[ProfileKeys.ONBOARDING_DONE] ?: false,
             knownFacts = (prefs[ProfileKeys.KNOWN_FACTS] ?: "")
-            .split("|||")
+                .split("|||")
                 .filter { it.isNotEmpty() },
             weightKg = prefs[ProfileKeys.WEIGHT]?.toFloatOrNull(),
             heightCm = prefs[ProfileKeys.HEIGHT]?.toFloatOrNull(),
@@ -112,7 +117,12 @@ class ProfileRepository(private val context: Context) {
                 .split("|||").filter { it.isNotEmpty() },
             dietPlan = prefs[ProfileKeys.DIET_PLAN] ?: "",
             purpose = prefs[ProfileKeys.PURPOSE] ?: "patient",
-            )
+
+            // FIX: now actually read back
+            insulinType = prefs[ProfileKeys.INSULIN_TYPE]?.ifEmpty { null },
+            otherConditions = (prefs[ProfileKeys.OTHER_CONDITIONS] ?: "")
+                .split("|||").filter { it.isNotEmpty() },
+        )
     }
 
     // Save profile
@@ -143,8 +153,13 @@ class ProfileRepository(private val context: Context) {
             prefs[ProfileKeys.EMERGENCY_HISTORY] = profile.emergencyHistory.joinToString("|||")
             prefs[ProfileKeys.DIET_PLAN] = profile.dietPlan
             prefs[ProfileKeys.PURPOSE] = profile.purpose
+
+            // FIX: now actually written
+            prefs[ProfileKeys.INSULIN_TYPE] = profile.insulinType ?: ""
+            prefs[ProfileKeys.OTHER_CONDITIONS] = profile.otherConditions.joinToString("|||")
         }
     }
+
     suspend fun saveFacts(facts: List<String>) {
         context.dataStore.edit { prefs ->
             prefs[ProfileKeys.KNOWN_FACTS] = facts.joinToString("|||")

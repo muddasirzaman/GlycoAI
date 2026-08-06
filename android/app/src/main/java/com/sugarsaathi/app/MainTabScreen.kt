@@ -19,7 +19,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.ui.text.font.FontWeight
 import kotlinx.coroutines.launch
 
-
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun MainTabScreen(
     selectedTab: Int,
@@ -33,13 +33,22 @@ fun MainTabScreen(
     onEditProfile: () -> Unit
 ) {
     Scaffold(
-        // 🔧 FIX: stop Scaffold from reserving keyboard space itself.
-        // ChatScreen already handles the keyboard with its own .imePadding(),
-        // so without this line the bottom space gets reserved TWICE,
-        // causing the extra gap above the keyboard.
-        contentWindowInsets = ScaffoldDefaults.contentWindowInsets.exclude(WindowInsets.ime),
+        // FIX: ALL bottom inset handling lives here, in exactly one place.
+        // union() takes the LARGER of keyboard / nav-bar, never the sum, so the
+        // whole Scaffold (tab bar included) sits directly on top of the keyboard.
+        modifier = Modifier.windowInsetsPadding(
+            WindowInsets.ime.union(WindowInsets.navigationBars)
+        ),
+        // FIX: Scaffold must not add insets of its own — the line above covers the
+        // bottom, and each screen's TopAppBar covers the status bar at the top.
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         bottomBar = {
-            NavigationBar(containerColor = Color.White) {
+            NavigationBar(
+                containerColor = Color.White,
+                // FIX: NavigationBar applies a navigation-bar inset by default.
+                // The Scaffold modifier already did that, so zero it out here.
+                windowInsets = WindowInsets(0, 0, 0, 0)
+            ) {
                 NavigationBarItem(
                     selected = selectedTab == 0,
                     onClick = { onTabSelected(0) },
@@ -84,7 +93,6 @@ fun MainTabScreen(
                         indicatorColor = Color(0xFFE1F5EE)
                     )
                 )
-
             }
         }
     ) { padding ->
@@ -123,7 +131,12 @@ fun ProfileTabPlaceholder(profile: UserProfileData, onEditProfile: () -> Unit) {
     val profileRepo = remember { ProfileRepository(context) }
 
     Column(
-        modifier = Modifier.fillMaxSize().padding(24.dp)
+        modifier = Modifier
+            .fillMaxSize()
+            // FIX: this tab has no TopAppBar, so it needs its own status-bar padding
+            // now that the Scaffold no longer supplies one.
+            .statusBarsPadding()
+            .padding(24.dp)
     ) {
         Text(stringResource(R.string.tab_profile), style = MaterialTheme.typography.headlineSmall)
         Spacer(Modifier.height(16.dp))
