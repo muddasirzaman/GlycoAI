@@ -1,6 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
+    <string name="daily_tips_title">💡 آج کے مشورے</string>
+    <!-- Login -->
+    <string name="login_title">گلائیکو اے آئی میں خوش آمدید</string>
+    <string name="login_subtitle">جاری رکھنے کے لیے اپنا موبائل نمبر درج کریں</string>
+    <string name="phone_number">موبائل نمبر</string>
+    <string name="phone_hint">3001234567</string>
+    <string name="send_code">کوڈ بھیجیں</string>
+    <string name="otp_title">کوڈ درج کریں</string>
+    <string name="otp_subtitle">ہم نے %1$s پر 6 ہندسوں کا کوڈ بھیجا ہے</string>
+    <string name="otp_label">6 ہندسوں کا کوڈ</string>
+    <string name="verify">تصدیق کریں</string>
+    <string name="change_number">نمبر تبدیل کریں</string>
+    <string name="resend_code">دوبارہ کوڈ بھیجیں</string>
+
     <!-- Login -->
     <string name="auth_signup_title">اپنا اکاؤنٹ بنائیں</string>
     <string name="auth_login_title">خوش آمدید</string>

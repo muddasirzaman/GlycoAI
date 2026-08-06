@@ -18,7 +18,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.ui.text.font.FontWeight
 import kotlinx.coroutines.launch
-import androidx.compose.material.icons.filled.Info
+
 
 @Composable
 fun MainTabScreen(
@@ -84,17 +84,7 @@ fun MainTabScreen(
                         indicatorColor = Color(0xFFE1F5EE)
                     )
                 )
-                NavigationBarItem(
-                    selected = selectedTab == 4,
-                    onClick = { onTabSelected(4) },
-                    icon = { Icon(Icons.Default.Info, contentDescription = "Tips") },
-                    label = { Text("Tips") },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = TealGreen,
-                        selectedTextColor = TealGreen,
-                        indicatorColor = Color(0xFFE1F5EE)
-                    )
-                )
+
             }
         }
     ) { padding ->
@@ -120,7 +110,6 @@ fun MainTabScreen(
                     profile = profile,
                     onEditProfile = onEditProfile
                 )
-                4 -> TipsScreen(profile = profile)
             }
         }
     }

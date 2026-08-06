@@ -1,114 +1,112 @@
 package com.sugarsaathi.app
 
+import android.app.Activity
 import androidx.lifecycle.ViewModel
+import com.google.firebase.FirebaseException
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
-import com.google.firebase.auth.FirebaseAuthInvalidUserException
-import com.google.firebase.auth.FirebaseAuthUserCollisionException
-import com.google.firebase.auth.FirebaseAuthWeakPasswordException
+import com.google.firebase.auth.PhoneAuthCredential
+import com.google.firebase.auth.PhoneAuthOptions
+import com.google.firebase.auth.PhoneAuthProvider
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import java.util.concurrent.TimeUnit
 
 data class AuthUiState(
+    val phoneNumber: String = "",
+    val otpSent: Boolean = false,
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
-    val isSignedIn: Boolean = false,
-    val needsEmailVerification: Boolean = false,
-    val verificationEmailSent: Boolean = false
+    val isVerified: Boolean = false
 )
 
 class AuthViewModel : ViewModel() {
 
     private val auth = FirebaseAuth.getInstance()
+    private var verificationId: String? = null
 
     private val _uiState = MutableStateFlow(AuthUiState())
     val uiState: StateFlow<AuthUiState> = _uiState
 
-    // Only "already signed in" if the account exists AND the email was verified.
-    fun isAlreadySignedIn(): Boolean =
-        auth.currentUser != null && auth.currentUser?.isEmailVerified == true
+    fun isAlreadySignedIn(): Boolean = auth.currentUser != null
 
-    fun signUp(email: String, password: String) {
-        if (email.isBlank() || password.isBlank()) return
+    fun sendOtp(activity: Activity, phone: String) {
+        if (phone.isBlank()) return
+
+        _uiState.value = _uiState.value.copy(
+            isLoading = true,
+            errorMessage = null,
+            phoneNumber = phone
+        )
+
+        val callbacks = object : PhoneAuthProvider.OnVerificationStateChangedCallbacks() {
+
+            // Some devices auto-read the SMS and sign in without user typing
+            override fun onVerificationCompleted(credential: PhoneAuthCredential) {
+                signInWithCredential(credential)
+            }
+
+            override fun onVerificationFailed(e: FirebaseException) {
+                android.util.Log.e("GLYCOAUTH", "FAILED: ${e.message}", e)
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    errorMessage = "DEBUG: ${e.message}"
+                )
+            }
+
+            override fun onCodeSent(
+                id: String,
+                token: PhoneAuthProvider.ForceResendingToken
+            ) {
+                verificationId = id
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    otpSent = true,
+                    errorMessage = null
+                )
+            }
+        }
+
+        val options = PhoneAuthOptions.newBuilder(auth)
+            .setPhoneNumber(phone)
+            .setTimeout(60L, TimeUnit.SECONDS)
+            .setActivity(activity)
+            .setCallbacks(callbacks)
+            .build()
+
+        android.util.Log.d("GLYCOAUTH", "Sending OTP to: $phone")
+        PhoneAuthProvider.verifyPhoneNumber(options)
+    }
+
+    fun verifyOtp(code: String) {
+        val id = verificationId
+        if (id == null || code.isBlank()) return
+
         _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
 
-        auth.createUserWithEmailAndPassword(email.trim(), password)
+        val credential = PhoneAuthProvider.getCredential(id, code)
+        signInWithCredential(credential)
+    }
+
+    private fun signInWithCredential(credential: PhoneAuthCredential) {
+        auth.signInWithCredential(credential)
             .addOnCompleteListener { task ->
                 if (task.isSuccessful) {
-                    auth.currentUser?.sendEmailVerification()
-                        ?.addOnCompleteListener {
-                            _uiState.value = _uiState.value.copy(
-                                isLoading = false,
-                                needsEmailVerification = true,
-                                verificationEmailSent = true
-                            )
-                        }
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        isVerified = true
+                    )
                 } else {
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
-                        errorMessage = friendlyError(task.exception)
+                        errorMessage = "That code did not match. Please try again."
                     )
                 }
             }
     }
 
-    fun signIn(email: String, password: String) {
-        if (email.isBlank() || password.isBlank()) return
-        _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
-
-        auth.signInWithEmailAndPassword(email.trim(), password)
-            .addOnCompleteListener { task ->
-                if (task.isSuccessful) {
-                    if (auth.currentUser?.isEmailVerified == true) {
-                        _uiState.value = _uiState.value.copy(isLoading = false, isSignedIn = true)
-                    } else {
-                        _uiState.value = _uiState.value.copy(
-                            isLoading = false,
-                            needsEmailVerification = true
-                        )
-                    }
-                } else {
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        errorMessage = friendlyError(task.exception)
-                    )
-                }
-            }
-    }
-
-    fun resendVerificationEmail() {
-        _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
-        auth.currentUser?.sendEmailVerification()
-            ?.addOnCompleteListener { task ->
-                if (task.isSuccessful) {
-                    _uiState.value = _uiState.value.copy(isLoading = false, verificationEmailSent = true)
-                } else {
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        errorMessage = "Couldn't resend the email. Please try again."
-                    )
-                }
-            }
-    }
-
-    // Called when the user taps "I've verified" — re-checks the real status with Firebase.
-    fun checkIfVerified() {
-        _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
-        auth.currentUser?.reload()
-            ?.addOnCompleteListener { task ->
-                if (task.isSuccessful && auth.currentUser?.isEmailVerified == true) {
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        isSignedIn = true,
-                        needsEmailVerification = false
-                    )
-                } else {
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        errorMessage = "Still not verified. Please check your email and tap the link first."
-                    )
-                }
-            }
+    fun changeNumber() {
+        verificationId = null
+        _uiState.value = AuthUiState()
     }
 
     fun signOut() {
@@ -116,25 +114,15 @@ class AuthViewModel : ViewModel() {
         _uiState.value = AuthUiState()
     }
 
-    fun clearError() {
-        _uiState.value = _uiState.value.copy(errorMessage = null)
-    }
-
-    private fun friendlyError(e: Exception?): String = when (e) {
-        is FirebaseAuthWeakPasswordException ->
-            "Password is too weak. Use at least 6 characters."
-        is FirebaseAuthInvalidCredentialsException ->
-            "That email address doesn't look right. Please check and try again."
-        is FirebaseAuthUserCollisionException ->
-            "An account with this email already exists. Try logging in instead."
-        is FirebaseAuthInvalidUserException ->
-            "No account found with this email. Try creating one instead."
-        else -> when {
-            e?.message?.contains("network", ignoreCase = true) == true ->
-                "No internet connection. Please check and try again."
-            e?.message?.contains("password is invalid", ignoreCase = true) == true ->
-                "Incorrect password. Please try again."
-            else -> "Something went wrong. Please try again."
-        }
+    // Not used while debugging - restore after OTP works
+    @Suppress("unused")
+    private fun friendlyError(raw: String?): String = when {
+        raw?.contains("invalid", ignoreCase = true) == true ->
+            "That phone number doesn't look right. Please check and try again."
+        raw?.contains("network", ignoreCase = true) == true ->
+            "No internet connection. Please check and try again."
+        raw?.contains("quota", ignoreCase = true) == true ->
+            "Too many attempts. Please try again later."
+        else -> "Couldn't send the code. Please try again."
     }
 }

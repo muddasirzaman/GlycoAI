@@ -54,7 +54,7 @@ class MainActivity : ComponentActivity() {
 
         val reminderRequest =
             OneTimeWorkRequestBuilder<ReminderWorker>()
-                .setInitialDelay(24, TimeUnit.HOURS)
+                .setInitialDelay(2, TimeUnit.HOURS)
                 .build()
 
         WorkManager.getInstance(this).enqueueUniqueWork(

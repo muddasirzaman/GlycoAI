@@ -53,7 +53,9 @@ import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.res.stringResource
+import androidx.compose.foundation.clickable
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 
 val TealGreen = Color(0xFF1D9E75)
 
@@ -269,6 +271,8 @@ fun ChatScreen(
             )
         )
 
+        DailyTipsCard(language = userProfile.language)
+
         LazyColumn(
             state = listState,
             modifier = Modifier
@@ -278,7 +282,7 @@ fun ChatScreen(
             contentPadding = PaddingValues(vertical = 12.dp)
         ) {
             if (uiState.messages.isEmpty()) {
-                item { WelcomeMessage(isUrdu = isUrdu, name = userProfile.name) }
+                item { WelcomeMessage(name = userProfile.name) }
             }
             items(uiState.messages) { message ->
                 MessageBubble(
@@ -289,7 +293,7 @@ fun ChatScreen(
                 )
             }
             if (uiState.isLoading) {
-                item { TypingIndicator(isUrdu = isUrdu) }
+                item { TypingIndicator() }
             }
         }
 
@@ -514,7 +518,7 @@ fun SpeedDialItem(
 }
 
 @Composable
-fun WelcomeMessage(isUrdu: Boolean, name: String) {
+fun WelcomeMessage(name: String) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = Color(0xFFE1F5EE)),
@@ -566,16 +570,19 @@ fun MessageBubble(message: Message, onSpeak: ((String) -> Unit)? = null) {
                     .padding(14.dp)
             ) {
                 SelectionContainer {
-                    LinkifiedMessageText(
-                        text = message.content
-                            .replace("**", "")
-                            .replace("##", "")
-                            .replace("# ", "")
-                            .replace("---", "─────"),
-                        textColor = if (isUser) Color.White else MaterialTheme.colorScheme.onSurface,
-                        fontSize = 15.sp,
-                        lineHeight = 22.sp
-                    )
+                    if (isUser) {
+                        Text(
+                            text = message.content,
+                            color = Color.White,
+                            fontSize = 15.sp,
+                            lineHeight = 22.sp
+                        )
+                    } else {
+                        MarkdownText(
+                            markdown = message.content,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
                 }
             }
 
@@ -615,7 +622,7 @@ fun MessageBubble(message: Message, onSpeak: ((String) -> Unit)? = null) {
 }
 
 @Composable
-fun TypingIndicator(isUrdu: Boolean) {
+fun TypingIndicator() {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -631,5 +638,54 @@ fun TypingIndicator(isUrdu: Boolean) {
             fontSize = 12.sp,
             color = Color.Gray
         )
+    }
+}
+
+@Composable
+fun DailyTipsCard(language: String) {
+    var expanded by remember { mutableStateOf(true) }
+    val tips = remember(language) { DailyTips.todaysTips(language, 3) }
+
+    if (tips.isEmpty()) return
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 12.dp, vertical = 6.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFFE1F5EE)),
+        shape = RoundedCornerShape(14.dp)
+    ) {
+        Column(modifier = Modifier.padding(14.dp)) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { expanded = !expanded },
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    stringResource(R.string.daily_tips_title),
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF0D5A44)
+                )
+                Icon(
+                    imageVector = if (expanded) Icons.Default.KeyboardArrowUp
+                    else Icons.Default.KeyboardArrowDown,
+                    contentDescription = null,
+                    tint = Color(0xFF0D5A44)
+                )
+            }
+
+            if (expanded) {
+                Spacer(Modifier.height(8.dp))
+                tips.forEach { tip ->
+                    Row(modifier = Modifier.padding(vertical = 4.dp)) {
+                        Text("•  ", fontSize = 14.sp, color = Color(0xFF0D5A44))
+                        Text(tip, fontSize = 13.sp, lineHeight = 19.sp)
+                    }
+                }
+            }
+        }
     }
 }

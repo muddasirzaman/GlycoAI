@@ -18,7 +18,9 @@ class ReminderWorker(
     workerParams: WorkerParameters
 ) : Worker(appContext, workerParams) {
 
+
     override fun doWork(): Result {
+        android.util.Log.d("GLYCOREMIND", "Worker started")
 
         createNotificationChannel()
 
@@ -51,12 +53,14 @@ class ReminderWorker(
                 Context.NOTIFICATION_SERVICE
             ) as NotificationManager
 
+        android.util.Log.d("GLYCOREMIND", "About to show notification")
         notificationManager.notify(
             NOTIFICATION_ID,
             notification
         )
-
+        android.util.Log.d("GLYCOREMIND", "Permission NOT granted - skipping")
         return Result.success()
+
     }
 
     private fun createNotificationChannel() {

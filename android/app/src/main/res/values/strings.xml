@@ -1,5 +1,19 @@
 <resources>
 
+    <string name="daily_tips_title">💡 Today\'s tips</string>
+    <!-- Login -->
+    <string name="login_title">Welcome to GlycoAI</string>
+    <string name="login_subtitle">Enter your mobile number to continue</string>
+    <string name="phone_number">Mobile number</string>
+    <string name="phone_hint">3001234567</string>
+    <string name="send_code">Send code</string>
+    <string name="otp_title">Enter the code</string>
+    <string name="otp_subtitle">We sent a 6-digit code to %1$s</string>
+    <string name="otp_label">6-digit code</string>
+    <string name="verify">Verify</string>
+    <string name="change_number">Change number</string>
+    <string name="resend_code">Resend code</string>
+
     <!-- Login -->
     <string name="auth_signup_title">Create Your Account</string>
     <string name="auth_login_title">Welcome Back</string>

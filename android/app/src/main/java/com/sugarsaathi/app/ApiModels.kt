@@ -88,5 +88,3 @@ data class ExtractResponse(
     val facts: List<String>
 )
 
-data class TipsRequest(val profile: ProfileData)
-data class TipsResponse(val tips: List<String>)
