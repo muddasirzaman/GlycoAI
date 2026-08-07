@@ -72,6 +72,12 @@ fun GlucoseHistoryScreen(
                     .padding(12.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
+                item {
+                    GlucoseChart(
+                        readings = readings,
+                        displayUnit = readings.firstOrNull()?.unit ?: "mg/dL"
+                    )
+                }
 
                 item {
                     latest?.let { r ->

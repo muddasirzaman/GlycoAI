@@ -228,6 +228,14 @@
     <string name="add_reading">＋  ریڈنگ شامل کریں</string>
     <string name="view_my_readings">📊  میری ریڈنگز دیکھیں</string>
 
+
+    <string name="chart_title">آپ کا رجحان</string>
+    <string name="chart_7_days">۷ دن</string>
+    <string name="chart_30_days">۳۰ دن</string>
+    <string name="chart_no_data">اس عرصے میں کوئی ریڈنگ نہیں</string>
+    <string name="chart_legend_target">ہدف کی حد</string>
+    <string name="chart_reading_count">%1$d ریڈنگز</string>
+
     <!-- Add reading screen -->
     <string name="add_glucose_reading">شوگر ریڈنگ شامل کریں</string>
     <string name="blood_glucose_reading">خون میں شوگر کی ریڈنگ</string>

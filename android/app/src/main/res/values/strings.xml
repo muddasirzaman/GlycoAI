@@ -240,6 +240,13 @@
     <string name="range_error_mgdl">Reading must be between 20 and 700 mg/dL.</string>
     <string name="range_error_mmol">Reading must be between 1 and 40 mmol/L.</string>
 
+    <string name="chart_title">Your trend</string>
+    <string name="chart_7_days">7 days</string>
+    <string name="chart_30_days">30 days</string>
+    <string name="chart_no_data">No readings in this period yet</string>
+    <string name="chart_legend_target">Target range</string>
+    <string name="chart_reading_count">%1$d readings</string>
+
     <!-- Reading types -->
     <string name="rt_fasting">Fasting</string>
     <string name="rt_before_breakfast">Before Breakfast</string>
