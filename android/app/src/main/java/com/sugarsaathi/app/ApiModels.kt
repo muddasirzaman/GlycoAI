@@ -1,6 +1,12 @@
 package com.sugarsaathi.app
 
-// What we send TO the server
+// What we send TO the server.
+//
+// The underscore names are deliberate: they mirror the FastAPI field names
+// exactly, which is what lets the JSON map straight across. Renaming them to
+// camelCase would break every request silently, so the naming inspection is
+// suppressed rather than obeyed.
+@Suppress("PropertyName")
 data class ProfileData(
 
     val name: String,
@@ -67,6 +73,7 @@ fun UserProfileData.toApiProfileData(glucoseSummary: String? = null): ProfileDat
     )
 }
 
+@Suppress("PropertyName")
 data class ChatRequest(
     val message: String,
     val profile: ProfileData,
@@ -85,6 +92,7 @@ data class ChatRequest(
 // JSON stays null even when the Kotlin type says non-null. Declaring these as
 // non-null List/Boolean would throw at runtime against an older backend.
 // Nullable + the helper accessors below keeps old and new servers both working.
+@Suppress("PropertyName")
 data class ChatResponse(
     val response: String,
     val safety_triggered: Boolean? = null,
@@ -92,7 +100,6 @@ data class ChatResponse(
     val quick_replies: List<String>? = null,
     val tier: String? = null
 ) {
-    val safetyTriggered: Boolean get() = safety_triggered == true
     val needsContext: Boolean get() = needs_context == true
     val quickReplies: List<String> get() = quick_replies.orEmpty()
 }
@@ -103,6 +110,7 @@ data class Message(
     val content: String
 )
 
+@Suppress("PropertyName")
 data class ExtractRequest(
     val conversation: List<Map<String, String>>,
     val existing_facts: List<String>

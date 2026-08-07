@@ -58,9 +58,13 @@ fun OnboardingScreen(onComplete: (UserProfileData) -> Unit) {
     // Build a context whose locale follows the chosen language — live, no restart
     val layoutDirection = if (language == "ur") LayoutDirection.Rtl else LayoutDirection.Ltr
     val baseContext = LocalContext.current
-    val localizedContext = remember(language) {
-        val locale = Locale(language)
-        val config = Configuration(baseContext.resources.configuration)
+    // Read the configuration from LocalConfiguration, not from
+    // context.resources - the composition local is recomposition-aware.
+    val baseConfiguration = LocalConfiguration.current
+    val localizedContext = remember(language, baseConfiguration) {
+        // Locale(String) is deprecated; forLanguageTag is the replacement.
+        val locale = Locale.forLanguageTag(language)
+        val config = Configuration(baseConfiguration)
         config.setLocale(locale)
         config.setLayoutDirection(locale)
         baseContext.createConfigurationContext(config)
@@ -74,6 +78,11 @@ fun OnboardingScreen(onComplete: (UserProfileData) -> Unit) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                // Onboarding renders outside the Scaffold, so with
+                // enableEdgeToEdge() it gets no automatic insets. Without this
+                // the progress text slides under the clock and the bottom
+                // content under the gesture bar.
+                .systemBarsPadding()
                 .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -128,7 +137,6 @@ fun OnboardingScreen(onComplete: (UserProfileData) -> Unit) {
                     diagnosisYear = diagnosisYear,
                     hba1c = hba1c,
                     glucoseUnit = glucoseUnit,
-                    smoking = smoking,
                     onNameChange = { name = it },
                     onAgeChange = { age = it },
                     onSexChange = { sex = it },
@@ -360,6 +368,12 @@ fun Screen1Language(
         ) {
             Text(stringResource(R.string.next_button), fontSize = 16.sp)
         }
+
+        // Push institutional branding to the bottom so it never competes with
+        // the app name or the primary action above it.
+        Spacer(modifier = Modifier.weight(1f))
+        Spacer(modifier = Modifier.height(24.dp))
+        OrganizationLogos()
     }
 }
 
@@ -372,7 +386,6 @@ fun Screen2BasicInfo(
     diagnosisYear: String,
     hba1c: String,
     glucoseUnit: String,
-    smoking: String,
     onNameChange: (String) -> Unit,
     onAgeChange: (String) -> Unit,
     onSexChange: (String) -> Unit,

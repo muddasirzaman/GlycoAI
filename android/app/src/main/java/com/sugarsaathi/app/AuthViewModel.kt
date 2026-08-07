@@ -49,7 +49,7 @@ class AuthViewModel : ViewModel() {
                 android.util.Log.e("GLYCOAUTH", "FAILED: ${e.message}", e)
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    errorMessage = "DEBUG: ${e.message}"
+                    errorMessage = friendlyError(e.message)
                 )
             }
 

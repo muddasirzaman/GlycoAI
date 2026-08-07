@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-
+    <string name="in_collaboration_with">اشتراک کے ساتھ</string>
     <string name="daily_tips_title">💡 آج کے مشورے</string>
     <!-- Login -->
     <string name="login_title">گلائیکو اے آئی میں خوش آمدید</string>
@@ -181,8 +181,8 @@
 
     <!-- Chat screen -->
     <string name="chat_subtitle">آپ کا روزانہ ذیابیطس ساتھی</string>
-    <string name="type_question">اپنا سوال لکھیں...</string>
-    <string name="thinking">جواب آ رہا ہے...</string>
+    <string name="type_question">اپنا سوال لکھیں…</string>
+    <string name="thinking">جواب آ رہا ہے…</string>
     <string name="chat_hello">السلام علیکم، %1$s! 👋</string>
     <string name="chat_intro">میں گلائیکو اے آئی ہوں۔ ذیابیطس کے بارے میں کچھ بھی پوچھیں!</string>
     <string name="voice">آواز</string>
@@ -203,6 +203,7 @@
     <string name="edit_my_information">میری معلومات میں تبدیلی</string>
 
     <!-- Glucose hub -->
+
     <string name="tracker_title">شوگر ٹریکر</string>
     <string name="track_blood_sugar">اپنی شوگر ٹریک کریں</string>
     <string name="log_and_progress">ریڈنگ درج کریں اور اپنی پیش رفت دیکھیں</string>

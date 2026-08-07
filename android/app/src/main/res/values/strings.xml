@@ -1,5 +1,5 @@
 <resources>
-
+    <string name="in_collaboration_with">In collaboration with</string>
     <string name="daily_tips_title">💡 Today\'s tips</string>
     <!-- Login -->
     <string name="login_title">Welcome to GlycoAI</string>
@@ -182,8 +182,8 @@
 
     <!-- Chat screen -->
     <string name="chat_subtitle">Your Daily Diabetes Companion</string>
-    <string name="type_question">Type your question...</string>
-    <string name="thinking">Thinking...</string>
+    <string name="type_question">Type your question…</string>
+    <string name="thinking">Thinking…</string>
     <string name="chat_hello">Hello, %1$s! 👋</string>
     <string name="chat_intro">I am GlycoAI. Ask me anything about diabetes!</string>
     <string name="voice">Voice</string>
