@@ -3,3 +3,4 @@ uvicorn
 anthropic
 python-dotenv
 pydantic
+firebase-admin>=6.5.0
