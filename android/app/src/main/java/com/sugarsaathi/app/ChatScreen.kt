@@ -59,6 +59,7 @@ import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 
 val TealGreen = Color(0xFF1D9E75)
@@ -522,6 +523,20 @@ fun ChatScreen(
                 )
             }
         }
+
+        // Standing reminder. Consent at install is easy to forget by the time
+        // someone is actually asking about their medication.
+        Text(
+            text = stringResource(R.string.chat_disclaimer_footer),
+            fontSize = 10.sp,
+            color = Color.Gray,
+            lineHeight = 13.sp,
+            textAlign = TextAlign.Center,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp)
+                .padding(bottom = 6.dp)
+        )
     }
 }
 

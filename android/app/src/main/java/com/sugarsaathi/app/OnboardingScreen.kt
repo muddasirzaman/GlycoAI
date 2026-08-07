@@ -94,7 +94,7 @@ fun OnboardingScreen(onComplete: (UserProfileData) -> Unit) {
             )
 
             LinearProgressIndicator(
-                progress = { currentScreen / 7f },
+                progress = { currentScreen / 8f },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = 32.dp),
@@ -109,11 +109,19 @@ fun OnboardingScreen(onComplete: (UserProfileData) -> Unit) {
                     onNext = { currentScreen = 2 }
                 )
 
-                2 -> PurposeScreen(
+                // Consent sits after language so it is read in the user's own
+                // language, and before any medical question so nothing personal
+                // is collected before they know what this app is.
+                2 -> ConsentScreen(
+                    onAccept = { currentScreen = 3 },
+                    onBack = { currentScreen = 1 }
+                )
+
+                3 -> PurposeScreen(
                     onPurposeSelected = { chosen ->
                         purpose = chosen
                         if (chosen == "patient") {
-                            currentScreen = 3   // continue to medical onboarding
+                            currentScreen = 4   // continue to medical onboarding
                         } else {
                             // non-patient: complete immediately, go to chat
                             onComplete(
@@ -123,6 +131,8 @@ fun OnboardingScreen(onComplete: (UserProfileData) -> Unit) {
                                     diabetesType = "none",
                                     language = language,
                                     purpose = chosen,
+                                    consentAccepted = true,
+                                    consentTimestamp = System.currentTimeMillis(),
                                     onboardingDone = true
                                 )
                             )
@@ -130,7 +140,7 @@ fun OnboardingScreen(onComplete: (UserProfileData) -> Unit) {
                     }
                 )
 
-                3 -> Screen2BasicInfo(
+                4 -> Screen2BasicInfo(
                     name = name,
                     age = age,
                     sex = sex,
@@ -143,18 +153,18 @@ fun OnboardingScreen(onComplete: (UserProfileData) -> Unit) {
                     onDiagnosisYearChange = { diagnosisYear = it },
                     onHba1cChange = { hba1c = it },
                     onGlucoseUnitChange = { glucoseUnit = it },
-                    onNext = { currentScreen = 4 },
-                    onBack = { currentScreen = 2 }
+                    onNext = { currentScreen = 6 },
+                    onBack = { currentScreen = 4 }
                 )
 
-                4 -> Screen3DiabetesType(
+                5 -> Screen3DiabetesType(
                     selectedType = diabetesType,
                     onTypeSelected = { diabetesType = it },
-                    onNext = { currentScreen = 5 },
-                    onBack = { currentScreen = 3 }
+                    onNext = { currentScreen = 6 },
+                    onBack = { currentScreen = 4 }
                 )
 
-                5 -> Screen4Conditions(
+                6 -> Screen4Conditions(
                     selectedConditions = selectedConditions,
                     otherCondition = complicationText,
                     onOtherConditionChange = { complicationText = it },
@@ -184,11 +194,11 @@ fun OnboardingScreen(onComplete: (UserProfileData) -> Unit) {
                         }
                     },
 
-                    onBack = { currentScreen = 4 },
-                    onNext = { currentScreen = 6 }
+                    onBack = { currentScreen = 6 },
+                    onNext = { currentScreen = 8 }
                 )
 
-                6 -> HealthProfileScreen(
+                7 -> HealthProfileScreen(
                     weight = weight,
                     height = height,
                     smoking = smoking,
@@ -209,11 +219,11 @@ fun OnboardingScreen(onComplete: (UserProfileData) -> Unit) {
                         emergencies = if (emergencies.contains(item)) emergencies - item else emergencies + item
                     },
                     onDietChange = { dietPlan = it },
-                    onBack = { currentScreen = 5 },
-                    onNext = { currentScreen = 7 }
+                    onBack = { currentScreen = 6 },
+                    onNext = { currentScreen = 8 }
                 )
 
-                7 -> Screen5Medications(
+                8 -> Screen5Medications(
                     selectedMeds = selectedMeds,
                     otherMedicine = otherMedicine,
                     diabetesType = diabetesType,
@@ -254,7 +264,7 @@ fun OnboardingScreen(onComplete: (UserProfileData) -> Unit) {
                         }
                     },
 
-                    onBack = { currentScreen = 6 },
+                    onBack = { currentScreen = 7 },
 
                     onFinish = {
                         onComplete(
@@ -304,6 +314,8 @@ fun OnboardingScreen(onComplete: (UserProfileData) -> Unit) {
                                         } else emptyList()
                                     ),
 
+                                consentAccepted = true,
+                                consentTimestamp = System.currentTimeMillis(),
                                 onboardingDone = true
                             )
                         )
@@ -313,6 +325,7 @@ fun OnboardingScreen(onComplete: (UserProfileData) -> Unit) {
         }
     }
 }
+
 
 // ─── Screen 1: Language ───────────────────────────────
 

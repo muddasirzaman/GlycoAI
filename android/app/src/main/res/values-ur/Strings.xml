@@ -38,6 +38,19 @@
     <string name="copied_to_clipboard">✅ کاپی ہو گیا</string>
     <string name="copy_message">کاپی کریں</string>
 
+    <string name="consent_title">شروع کرنے سے پہلے</string>
+    <string name="consent_intro">گلائیکو اے آئی ذیابیطس کے بارے میں سیکھنے اور اپنی ریڈنگز محفوظ رکھنے میں مدد دیتا ہے۔ براہ کرم پہلے یہ پڑھ لیں۔</string>
+    <string name="consent_point_education">گلائیکو اے آئی عام صحت کی معلومات دیتا ہے۔ یہ طبی مشورہ نہیں ہے۔</string>
+    <string name="consent_point_diagnose">یہ کسی بیماری کی تشخیص نہیں کر سکتا۔</string>
+    <string name="consent_point_doses">یہ کبھی نہیں بتائے گا کہ انسولین یا دوا کتنی لینی ہے۔ یہ صرف آپ کا ڈاکٹر طے کر سکتا ہے۔</string>
+    <string name="consent_point_doctor">یہ آپ کے ڈاکٹر کا متبادل نہیں۔ ہمیشہ ان کی ہدایات پر عمل کریں۔</string>
+    <string name="consent_point_emergency">ہنگامی صورت میں فوراً 1122 پر کال کریں یا قریبی ہسپتال جائیں۔ یہاں جواب کا انتظار نہ کریں۔</string>
+    <string name="consent_privacy_title">آپ کی معلومات کے بارے میں</string>
+    <string name="consent_privacy_body">آپ کی پروفائل اور ریڈنگز اسی فون میں محفوظ ہیں۔ جب آپ پیغام بھیجتے ہیں تو وہ ہمارے محفوظ سرور اور Anthropic کو جاتا ہے، جس کا اے آئی جواب لکھتا ہے۔ چیٹ میں اپنا شناختی کارڈ نمبر، پتہ یا بینک تفصیلات شیئر نہ کریں۔</string>
+    <string name="consent_checkbox">میں نے یہ پڑھ اور سمجھ لیا ہے۔ میں سمجھتا ہوں کہ گلائیکو اے آئی میرے ڈاکٹر کا متبادل نہیں۔</string>
+    <string name="consent_agree_button">میں متفق ہوں — جاری رکھیں</string>
+    <string name="chat_disclaimer_footer">گلائیکو اے آئی عام معلومات دیتا ہے، طبی مشورہ نہیں۔ ہنگامی صورت میں 1122 پر کال کریں۔</string>
+
     <!-- Welcome / navigation -->
     <string name="welcome_back">خوش آمدید،</string>
     <string name="continue_button">آگے بڑھیں →</string>

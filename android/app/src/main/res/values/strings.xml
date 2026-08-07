@@ -32,6 +32,19 @@
     <string name="sign_out_confirm">You will need your phone number and a new code to sign back in. Your saved readings and chats stay on this device.</string>
     <string name="cancel">Cancel</string>
 
+    <string name="consent_title">Before we begin</string>
+    <string name="consent_intro">GlycoAI helps you learn about diabetes and keep track of your readings. Please read this first.</string>
+    <string name="consent_point_education">GlycoAI gives general health education. It is not medical advice.</string>
+    <string name="consent_point_diagnose">It cannot diagnose any illness or condition.</string>
+    <string name="consent_point_doses">It will never tell you how much insulin or medicine to take. Only your doctor can decide that.</string>
+    <string name="consent_point_doctor">It does not replace your doctor. Always follow the advice they have given you.</string>
+    <string name="consent_point_emergency">In an emergency, call 1122 or go to the nearest hospital straight away. Do not wait for an answer here.</string>
+    <string name="consent_privacy_title">About your information</string>
+    <string name="consent_privacy_body">Your profile and readings are saved on this phone. When you send a message, it is sent to our secure server and to Anthropic, the company whose AI writes the reply. Please do not share your CNIC, address, or bank details in chat.</string>
+    <string name="consent_checkbox">I have read and understood the above. I understand GlycoAI does not replace my doctor.</string>
+    <string name="consent_agree_button">I Agree — Continue</string>
+    <string name="chat_disclaimer_footer">GlycoAI gives general education, not medical advice. In an emergency call 1122.</string>
+
     <string name="language_label">زبان</string>
     <string name="lang_english">English</string>
     <string name="lang_urdu">اردو</string>

@@ -41,6 +41,12 @@ object ProfileKeys {
     // so insulin type was always null and other conditions always empty.
     val INSULIN_TYPE = stringPreferencesKey("insulin_type")
     val OTHER_CONDITIONS = stringPreferencesKey("other_conditions")
+
+    // Informed consent. Stored with a timestamp so there is a record of WHEN
+    // the user agreed - needed if the disclaimer ever materially changes and
+    // users have to be re-prompted.
+    val CONSENT_ACCEPTED = booleanPreferencesKey("consent_accepted")
+    val CONSENT_TIMESTAMP = longPreferencesKey("consent_timestamp")
 }
 
 
@@ -76,6 +82,8 @@ data class UserProfileData(
     val emergencyHistory: List<String> = emptyList(),
     val dietPlan: String = "",
     val purpose: String = "patient",
+    val consentAccepted: Boolean = false,
+    val consentTimestamp: Long = 0L,
 )
 
 // Handles saving and loading profile
@@ -122,6 +130,8 @@ class ProfileRepository(private val context: Context) {
             insulinType = prefs[ProfileKeys.INSULIN_TYPE]?.ifEmpty { null },
             otherConditions = (prefs[ProfileKeys.OTHER_CONDITIONS] ?: "")
                 .split("|||").filter { it.isNotEmpty() },
+            consentAccepted = prefs[ProfileKeys.CONSENT_ACCEPTED] ?: false,
+            consentTimestamp = prefs[ProfileKeys.CONSENT_TIMESTAMP] ?: 0L,
         )
     }
 
@@ -157,6 +167,27 @@ class ProfileRepository(private val context: Context) {
             // FIX: now actually written
             prefs[ProfileKeys.INSULIN_TYPE] = profile.insulinType ?: ""
             prefs[ProfileKeys.OTHER_CONDITIONS] = profile.otherConditions.joinToString("|||")
+
+            // Never downgrade an existing consent to false on a profile save.
+            if (profile.consentAccepted) {
+                prefs[ProfileKeys.CONSENT_ACCEPTED] = true
+                prefs[ProfileKeys.CONSENT_TIMESTAMP] =
+                    if (profile.consentTimestamp > 0L) profile.consentTimestamp
+                    else System.currentTimeMillis()
+            }
+        }
+    }
+
+    /**
+     * Records consent on its own, for users who onboarded before this screen
+     * existed. Not called yet - wire it in when you add the re-consent check
+     * at launch for existing users.
+     */
+    @Suppress("unused")
+    suspend fun saveConsent() {
+        context.dataStore.edit { prefs ->
+            prefs[ProfileKeys.CONSENT_ACCEPTED] = true
+            prefs[ProfileKeys.CONSENT_TIMESTAMP] = System.currentTimeMillis()
         }
     }
 
