@@ -727,9 +727,9 @@ fun TypingIndicator() {
 }
 
 @Composable
-fun DailyTipsCard(language: String) {
+fun DailyTipsCard(language: String, tipCount: Int = 1) {
     var expanded by remember { mutableStateOf(true) }
-    val tips = remember(language) { DailyTips.todaysTips(language, 3) }
+    val tips = remember(language, tipCount) { DailyTips.todaysTips(language, tipCount) }
 
     if (tips.isEmpty()) return
 

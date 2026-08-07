@@ -4,10 +4,16 @@ sys.stdout.reconfigure(encoding="utf-8")
 import os
 import re
 import json
-from fastapi import FastAPI
+import time
+from collections import defaultdict, deque
+
+from fastapi import FastAPI, Depends, Header, HTTPException
 from pydantic import BaseModel, Field
 from anthropic import Anthropic
 from dotenv import load_dotenv
+
+import firebase_admin
+from firebase_admin import credentials, auth as fb_auth
 
 load_dotenv()
 
@@ -19,6 +25,121 @@ app = FastAPI(
 client = Anthropic(
     api_key=os.getenv("ANTHROPIC_API_KEY")
 )
+
+
+# =====================================================
+# Authentication
+# =====================================================
+#
+# REQUIRE_AUTH exists for staged rollout. Deploy this backend with it OFF,
+# ship the app update that sends the token, confirm traffic is authenticated,
+# THEN set it to true. Turning it on first breaks every installed copy.
+
+REQUIRE_AUTH = os.getenv("REQUIRE_AUTH", "false").strip().lower() == "true"
+
+_firebase_ready = False
+_service_account = os.getenv("FIREBASE_SERVICE_ACCOUNT")
+
+if _service_account:
+    try:
+        _cred = credentials.Certificate(json.loads(_service_account))
+        firebase_admin.initialize_app(_cred)
+        _firebase_ready = True
+        print(" Firebase Admin initialized")
+    except Exception as _e:
+        print(" FIREBASE INIT FAILED:", _e)
+else:
+    print(" FIREBASE_SERVICE_ACCOUNT not set - auth cannot be enforced")
+
+if REQUIRE_AUTH and not _firebase_ready:
+    print(" WARNING: REQUIRE_AUTH is on but Firebase is not ready. "
+          "All requests will be rejected.")
+elif not REQUIRE_AUTH:
+    print(" WARNING: REQUIRE_AUTH is off - this API is OPEN TO THE PUBLIC")
+
+
+async def current_uid(authorization: str | None = Header(default=None)) -> str:
+    """Verify the Firebase ID token and return the caller's UID."""
+
+    if not REQUIRE_AUTH:
+        return "anonymous"
+
+    if not _firebase_ready:
+        raise HTTPException(status_code=503, detail="Authentication unavailable")
+
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Sign in required")
+
+    token = authorization.split(" ", 1)[1].strip()
+
+    try:
+        decoded = fb_auth.verify_id_token(token)
+    except Exception:
+        # Deliberately vague: never tell a caller why a token failed.
+        raise HTTPException(status_code=401, detail="Session expired")
+
+    uid = decoded.get("uid")
+    if not uid:
+        raise HTTPException(status_code=401, detail="Session expired")
+    return uid
+
+
+# =====================================================
+# Rate limiting
+# =====================================================
+#
+# In-memory sliding window, keyed by Firebase UID. Good enough for a single
+# Railway instance. If you ever scale to more than one, move this to Redis -
+# each instance keeps its own counters, so the effective limit multiplies.
+
+RATE_PER_MIN = int(os.getenv("RATE_PER_MIN", "20"))
+RATE_PER_DAY = int(os.getenv("RATE_PER_DAY", "300"))
+
+_hits: dict[str, deque] = defaultdict(deque)
+
+# Roughly 7 MB of base64 - large enough for a phone photo, small enough that
+# nobody can use the endpoint as free storage or run up the bill.
+MAX_ATTACHMENT_CHARS = 7_000_000
+
+
+def enforce_rate_limit(uid: str) -> None:
+    if not REQUIRE_AUTH:
+        return
+
+    now = time.time()
+    window = _hits[uid]
+
+    while window and now - window[0] > 86_400:
+        window.popleft()
+
+    recent = sum(1 for t in window if now - t < 60)
+    if recent >= RATE_PER_MIN:
+        raise HTTPException(
+            status_code=429,
+            detail="Too many messages just now. Please wait a moment."
+        )
+
+    if len(window) >= RATE_PER_DAY:
+        raise HTTPException(
+            status_code=429,
+            detail="Daily limit reached. Please try again tomorrow."
+        )
+
+    window.append(now)
+
+    # Keep the dict from growing without bound on a long-lived process.
+    if len(_hits) > 10_000:
+        for k in [k for k, v in _hits.items() if not v]:
+            _hits.pop(k, None)
+
+
+def check_attachment_size(request) -> None:
+    for blob in (request.image_data, request.document_data):
+        if blob and len(blob) > MAX_ATTACHMENT_CHARS:
+            raise HTTPException(
+                status_code=413,
+                detail="That file is too large. Please try a smaller one."
+            )
 
 
 print("===================================")
@@ -878,7 +999,9 @@ class ExtractRequest(BaseModel):
 
 
 @app.post("/api/v1/extract-facts")
-async def extract_facts(request: ExtractRequest):
+async def extract_facts(request: ExtractRequest, uid: str = Depends(current_uid)):
+
+    enforce_rate_limit(uid)
 
     if len(request.conversation) < 2:
         return {"facts": request.existing_facts}
@@ -966,7 +1089,9 @@ class TipsRequest(BaseModel):
 
 
 @app.post("/api/v1/tips")
-async def get_tips(request: TipsRequest):
+async def get_tips(request: TipsRequest, uid: str = Depends(current_uid)):
+
+    enforce_rate_limit(uid)
 
     p = request.profile
 
@@ -1052,8 +1177,10 @@ def health():
     return {
         "status": "running",
         "app": "GlycoAI",
-        "version": "1.1",
-        "language": "English / urdu"
+        "version": "1.2",
+        "language": "English / urdu",
+        "auth_required": REQUIRE_AUTH,
+        "auth_ready": _firebase_ready,
     }
 
 
@@ -1067,7 +1194,10 @@ MAX_HISTORY = 14
 
 
 @app.post("/api/v1/chat")
-async def chat(request: ChatRequest):
+async def chat(request: ChatRequest, uid: str = Depends(current_uid)):
+
+    enforce_rate_limit(uid)
+    check_attachment_size(request)
 
     # ---------------------------------------------
     # Safety Check

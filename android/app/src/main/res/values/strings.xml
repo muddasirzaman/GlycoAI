@@ -2,7 +2,7 @@
     <string name="in_collaboration_with">In collaboration with</string>
     <string name="daily_tips_title">💡 Today\'s tips</string>
 
-
+    <string name="developed_in_collaboration">Developed in Collaboration with</string>
     <!-- Login -->
     <string name="login_title">Welcome to GlycoAI</string>
     <string name="login_subtitle">Enter your mobile number to continue</string>

@@ -60,10 +60,17 @@ fun SplashScreen(onFinished: () -> Unit) {
             // The wheel is the only element that can flex, so size it from BOTH
             // dimensions. Capping at 30% of height is what keeps the screen from
             // overflowing on short devices now that the logo strip is here too.
-            val wheelSize = minOf(maxWidth * 0.62f, maxHeight * 0.30f)
-                .coerceIn(140.dp, 280.dp)
+            // 0.26 (was 0.30) and a lower floor: the branding block is now
+            // roughly twice as tall, so the wheel gives up the difference.
+            val wheelSize = minOf(maxWidth * 0.62f, maxHeight * 0.26f)
+                .coerceIn(120.dp, 280.dp)
 
             val compact = maxHeight < 700.dp
+
+            // Captured here, at BoxWithConstraints level. Reading maxHeight
+            // inside the Column below fails - the implicit receiver there is
+            // ColumnScope, not BoxWithConstraintsScope.
+            val showFullNames = maxHeight >= 620.dp
 
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -73,7 +80,21 @@ fun SplashScreen(onFinished: () -> Unit) {
                     .padding(horizontal = 24.dp)
             ) {
 
-                Spacer(modifier = Modifier.height(if (compact) 20.dp else 44.dp))
+                Spacer(modifier = Modifier.height(if (compact) 8.dp else 14.dp))
+
+                // ── Institutional branding ──
+                // Placed above the app name as a sponsorship header. Sized
+                // smaller than the bottom placement so it reads as a credential
+                // line rather than competing with the GlycoAI wordmark below.
+                OrganizationLogos(
+                    minLogoSize = if (compact) 44.dp else 52.dp,
+                    maxLogoSize = if (compact) 54.dp else 68.dp,
+                    // On very short screens the full statement would squeeze
+                    // the wheel to nothing, so fall back to logos + label only.
+                    showNames = showFullNames
+                )
+
+                Spacer(modifier = Modifier.height(if (compact) 18.dp else 28.dp))
 
                 // ── App name ──
                 Text(
@@ -175,16 +196,6 @@ fun SplashScreen(onFinished: () -> Unit) {
                 }
 
                 Spacer(modifier = Modifier.height(if (compact) 16.dp else 24.dp))
-
-                // ── Institutional branding ──
-                // Sits below the app identity and the loading indicator, so it
-                // supports the brand rather than competing with it.
-                OrganizationLogos(
-                    minLogoSize = 36.dp,
-                    maxLogoSize = if (compact) 44.dp else 52.dp
-                )
-
-                Spacer(modifier = Modifier.height(12.dp))
 
                 // ── Footer ──
                 Text(

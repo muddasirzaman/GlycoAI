@@ -2,7 +2,7 @@
 <resources>
     <string name="in_collaboration_with">اشتراک کے ساتھ</string>
     <string name="daily_tips_title">💡 آج کے مشورے</string>
-
+    <string name="developed_in_collaboration">کے اشتراک سے تیار کیا گیا</string>
     <!-- Login -->
     <string name="login_title">گلائیکو اے آئی میں خوش آمدید</string>
     <string name="login_subtitle">جاری رکھنے کے لیے اپنا موبائل نمبر درج کریں</string>

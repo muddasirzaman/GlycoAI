@@ -19,33 +19,47 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
+// Official names, kept in English under both language settings - these are
+// registered institutional names, not translatable prose.
+private const val PCSIR_FULL =
+    "Pakistan Council of Scientific and Industrial Research (PCSIR)"
+private const val MOST_FULL =
+    "Ministry of Science and Technology, Government of Pakistan"
+
+// Matches the deep teal already used across the app's cards and headings.
+private val BrandDeepTeal = Color(0xFF0D5A44)
+
 /**
- * Institutional branding strip: PCSIR on the left, Ministry of Science and
- * Technology on the right, equally sized and evenly spaced.
+ * Institutional branding block: PCSIR on the left, Ministry of Science and
+ * Technology on the right, with the collaboration statement beneath.
  *
  * Both source images are white-background JPEGs, so they sit inside a single
  * white card. That keeps them legible on any background color and stops the
  * two logos - which have very different visual weight - from looking mismatched.
  *
- * Sizing is responsive: the logo height scales with available width but is
- * clamped, so it stays elegant on a small phone and does not balloon on a
- * tablet. Aspect ratio is preserved via ContentScale.Fit; nothing is stretched.
+ * Sizing is responsive: logo height scales with available width but is clamped,
+ * so it stays elegant on a small phone and does not balloon on a tablet.
+ * Aspect ratio is preserved via ContentScale.Fit; nothing is stretched.
  *
- * @param caption small label above the logos. Pass null to hide it.
- *                CHECK THE WORDING against your actual relationship with
- *                these organizations before shipping.
+ * @param showNames when false, only the logos and the short label appear. Use
+ *                  on very short screens where the full statement would push
+ *                  other content off the display.
  */
 @Composable
 fun OrganizationLogos(
     modifier: Modifier = Modifier,
-    caption: String? = stringResource(R.string.in_collaboration_with),
-    minLogoSize: Dp = 40.dp,
-    maxLogoSize: Dp = 60.dp
+    minLogoSize: Dp = 46.dp,
+    maxLogoSize: Dp = 68.dp,
+    showNames: Boolean = true
 ) {
     BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
 
-        // Roughly 16% of available width, clamped to a sensible range.
-        val logoSize = (maxWidth * 0.16f).coerceIn(minLogoSize, maxLogoSize)
+        // Roughly 18% of available width, clamped to a sensible range.
+        val logoSize = (maxWidth * 0.18f).coerceIn(minLogoSize, maxLogoSize)
+
+        // Text scales gently with the card so the block stays proportionate.
+        val nameSize = if (maxWidth < 340.dp) 10.5f else 11.5f
+        val labelSize = nameSize - 1.5f
 
         Surface(
             shape = RoundedCornerShape(16.dp),
@@ -56,20 +70,8 @@ fun OrganizationLogos(
         ) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.padding(horizontal = 20.dp, vertical = 14.dp)
+                modifier = Modifier.padding(horizontal = 18.dp, vertical = 14.dp)
             ) {
-                if (!caption.isNullOrBlank()) {
-                    Text(
-                        text = caption,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = Color.Gray,
-                        textAlign = TextAlign.Center,
-                        maxLines = 1
-                    )
-                    Spacer(Modifier.height(10.dp))
-                }
-
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.Center,
@@ -79,16 +81,13 @@ fun OrganizationLogos(
                     // space regardless of their own aspect ratios.
                     Image(
                         painter = painterResource(R.drawable.pcsir_logo),
-                        contentDescription =
-                            "Pakistan Council of Scientific and Industrial Research",
+                        contentDescription = PCSIR_FULL,
                         contentScale = ContentScale.Fit,
                         modifier = Modifier.size(logoSize)
                     )
 
-                    Spacer(Modifier.width(28.dp))
+                    Spacer(Modifier.width(26.dp))
 
-                    // Hairline separator keeps the pairing deliberate rather
-                    // than accidental. Remove if you prefer pure whitespace.
                     Box(
                         modifier = Modifier
                             .height(logoSize * 0.6f)
@@ -96,14 +95,59 @@ fun OrganizationLogos(
                             .background(Color(0xFFE0E0E0))
                     )
 
-                    Spacer(Modifier.width(28.dp))
+                    Spacer(Modifier.width(26.dp))
 
                     Image(
                         painter = painterResource(R.drawable.ministry_logo),
-                        contentDescription =
-                            "Ministry of Science and Technology, Government of Pakistan",
+                        contentDescription = MOST_FULL,
                         contentScale = ContentScale.Fit,
                         modifier = Modifier.size(logoSize)
+                    )
+                }
+
+                Spacer(Modifier.height(12.dp))
+
+                // The label is deliberately the smallest element here - the
+                // organization names carry the emphasis.
+                Text(
+                    text = stringResource(R.string.developed_in_collaboration),
+                    fontSize = labelSize.sp,
+                    fontWeight = FontWeight.Normal,
+                    color = Color(0xFF757575),
+                    textAlign = TextAlign.Center,
+                    lineHeight = (labelSize + 4).sp
+                )
+
+                if (showNames) {
+                    Spacer(Modifier.height(6.dp))
+
+                    Text(
+                        text = PCSIR_FULL,
+                        fontSize = nameSize.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = BrandDeepTeal,
+                        textAlign = TextAlign.Center,
+                        lineHeight = (nameSize + 4).sp
+                    )
+
+                    Spacer(Modifier.height(2.dp))
+
+                    Text(
+                        text = "&",
+                        fontSize = labelSize.sp,
+                        color = Color(0xFF9E9E9E),
+                        textAlign = TextAlign.Center
+                    )
+
+                    Spacer(Modifier.height(2.dp))
+
+                    Text(
+                        text = MOST_FULL,
+                        fontSize = nameSize.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = BrandDeepTeal,
+                        textAlign = TextAlign.Center,
+                        lineHeight = (nameSize + 4).sp
                     )
                 }
             }
