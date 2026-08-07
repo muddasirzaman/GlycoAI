@@ -242,7 +242,7 @@ fun ChatScreen(
 
     Column(
         modifier = Modifier.fillMaxSize()
-        // NOTE: no imePadding / navigationBarsPadding here on purpose.
+        // NOTE: no keyboard or navigation-bar padding here on purpose.
         // MainTabScreen's Scaffold owns all bottom inset handling. Adding it
         // here as well was what reserved the space twice and left the gap.
     ) {
@@ -529,7 +529,7 @@ fun ChatScreen(
  * Horizontally scrollable row of tappable suggestions.
  *
  * When the assistant asks a clarifying question these are likely answers
- * (including an "I don't know" escape, supplied by the backend). Otherwise
+ * (including an "I don't know" escape, supplied by the backend). Otherwise,
  * they are follow-up questions the user may want to ask next.
  */
 @Composable
@@ -625,6 +625,10 @@ fun WelcomeMessage(name: String) {
 fun MessageBubble(message: Message, onSpeak: ((String) -> Unit)? = null) {
     val isUser = message.role == "user"
     val context = LocalContext.current
+    // LocalClipboard (the replacement) exposes a suspend API and needs a
+    // coroutine scope plus ClipEntry construction. Not worth the churn here;
+    // LocalClipboardManager still works. Migrate deliberately, not incidentally.
+    @Suppress("DEPRECATION")
     val clipboard = LocalClipboardManager.current
     val copiedMsg = stringResource(R.string.copied_to_clipboard)
 

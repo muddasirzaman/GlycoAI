@@ -2,10 +2,11 @@ package com.sugarsaathi.app
 
 import android.content.Context
 import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
 import java.io.File
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Date
+import java.util.Locale
+import java.util.UUID
 
 data class ChatSession(
     val id: String = UUID.randomUUID().toString(),
@@ -35,21 +36,32 @@ class ChatHistoryRepository(private val context: Context) {
     fun loadAllSessions(): List<ChatSession> {
         return historyDir.listFiles()
             ?.filter { it.extension == "json" }
+            // `_` marks the exception as deliberately ignored - a corrupt or
+            // half-written session file is skipped rather than crashing the list.
             ?.mapNotNull {
                 try {
                     gson.fromJson(it.readText(), ChatSession::class.java)
-                } catch (e: Exception) { null }
+                } catch (_: Exception) { null }
             }
             ?.sortedByDescending { it.timestamp }
             ?: emptyList()
     }
 
+    /**
+     * Load one session by id.
+     *
+     * Currently unused: ChatHistoryScreen passes the whole ChatSession object
+     * straight to ChatDetailScreen, so nothing needs to re-read from disk.
+     * Kept because it is the natural counterpart to deleteSession and will be
+     * needed the moment sessions are opened from a notification or deep link.
+     */
+    @Suppress("unused")
     fun loadSession(id: String): ChatSession? {
         return try {
             val file = File(historyDir, "$id.json")
             if (file.exists()) gson.fromJson(file.readText(), ChatSession::class.java)
             else null
-        } catch (e: Exception) { null }
+        } catch (_: Exception) { null }
     }
 
     fun deleteSession(id: String) {

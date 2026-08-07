@@ -198,7 +198,10 @@ def check_safety(message: str, glucose_unit: str = "mg/dL"):
         else:
             # mg/dL: a 1-2 digit number here is almost always mmol/L or a typo,
             # so only act on clearly critical mg/dL values.
-            if 20 <= value <= 54 or value >= 450:
+            # Upper bound is 400 to match the app's own "very high" threshold in
+            # GlucoseSuggestions.kt - the Tracker tab and the chat must not
+            # disagree about whether the same reading is an emergency.
+            if 20 <= value <= 54 or value >= 400:
                 return {"blocked": True, "response": EMERGENCY_RESPONSE}
 
     for word in DOSING_WORDS:
