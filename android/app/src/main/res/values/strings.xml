@@ -1,6 +1,8 @@
 <resources>
     <string name="in_collaboration_with">In collaboration with</string>
     <string name="daily_tips_title">💡 Today\'s tips</string>
+
+
     <!-- Login -->
     <string name="login_title">Welcome to GlycoAI</string>
     <string name="login_subtitle">Enter your mobile number to continue</string>
@@ -26,6 +28,9 @@
     <string name="switch_to_login">Already have an account? Log in</string>
     <string name="switch_to_signup">Don\'t have an account? Sign up</string>
 
+    <string name="sign_out">Sign out</string>
+    <string name="sign_out_confirm">You will need your phone number and a new code to sign back in. Your saved readings and chats stay on this device.</string>
+    <string name="cancel">Cancel</string>
 
     <string name="language_label">زبان</string>
     <string name="lang_english">English</string>

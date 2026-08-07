@@ -18,6 +18,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
+import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 fun SplashScreen(onFinished: () -> Unit) {
@@ -31,7 +32,7 @@ fun SplashScreen(onFinished: () -> Unit) {
             targetValue = 1f,
             animationSpec = tween(durationMillis = 3000, easing = LinearEasing)
         )
-        delay(300)
+        delay(300.milliseconds)
         onFinished()
     }
 

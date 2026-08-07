@@ -170,10 +170,11 @@ private fun parseMarkdown(src: String): List<MdBlock> {
             line.firstOrNull()?.isDigit() == true && line.contains(". ") -> {
                 val dot = line.indexOf(". ")
                 val num = line.substring(0, dot).toIntOrNull()
-                if (num != null) {
-                    blocks += MdBlock.Numbered(line.substring(dot + 2).trim(), num, indent)
+
+                blocks += if (num != null) {
+                    MdBlock.Numbered(line.substring(dot + 2).trim(), num, indent)
                 } else {
-                    blocks += MdBlock.Paragraph(line)
+                    MdBlock.Paragraph(line)
                 }
             }
 
@@ -229,7 +230,7 @@ private fun inlineStyled(text: String): AnnotatedString = buildAnnotatedString {
     }
 }
 
-private inline fun androidx.compose.ui.text.AnnotatedString.Builder.withStyleBold(
+private inline fun AnnotatedString.Builder.withStyleBold(
     block: () -> Unit
 ) {
     pushStyle(SpanStyle(fontWeight = FontWeight.Bold))

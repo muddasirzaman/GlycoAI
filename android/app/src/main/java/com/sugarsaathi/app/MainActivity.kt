@@ -1,8 +1,9 @@
 package com.sugarsaathi.app
 
-import      android.os.Bundle
+import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.*
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -18,16 +19,14 @@ import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import java.util.concurrent.TimeUnit
-import java.util.Locale
-import android.content.res.Configuration
 import android.content.Context
-import androidx.activity.enableEdgeToEdge
 
 class MainActivity : ComponentActivity() {
 
     companion object {
         private var splashShown = false
     }
+
     private var chatVM: ChatViewModel? = null
     private var currentProfile: UserProfileData? = null
 
@@ -38,7 +37,8 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-            enableEdgeToEdge()          // <-- add this
+        enableEdgeToEdge()
+
         if (
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
             ContextCompat.checkSelfPermission(
@@ -69,7 +69,9 @@ class MainActivity : ComponentActivity() {
         setContent {
             SugarSaathiTheme {
                 val authViewModel: AuthViewModel = viewModel()
-                var languagePicked by remember { mutableStateOf(LocaleHelper.hasChosenLanguage(this@MainActivity)) }
+                var languagePicked by remember {
+                    mutableStateOf(LocaleHelper.hasChosenLanguage(this@MainActivity))
+                }
                 var isSignedIn by remember { mutableStateOf(authViewModel.isAlreadySignedIn()) }
                 var profile by remember { mutableStateOf<UserProfileData?>(null) }
                 var isLoading by remember { mutableStateOf(true) }
@@ -91,9 +93,9 @@ class MainActivity : ComponentActivity() {
                     val saved = profileRepo.profileFlow.first()
                     profile = saved
                     currentProfile = saved
-                    saved?.let {
-                        LocaleHelper.saveLanguage(this@MainActivity, it.language)
-                    }
+                    // profileFlow always emits a UserProfileData (defaults when
+                    // nothing is stored), so the safe call here was redundant.
+                    LocaleHelper.saveLanguage(this@MainActivity, saved.language)
                     isLoading = false
                     chatViewModel.initProfileRepo(this@MainActivity)
                     glucoseViewModel.init(this@MainActivity)
@@ -127,7 +129,10 @@ class MainActivity : ComponentActivity() {
                             onComplete = { newProfile ->
                                 lifecycleScope.launch {
                                     profileRepo.saveProfile(newProfile)
-                                    LocaleHelper.saveLanguage(this@MainActivity, newProfile.language)
+                                    LocaleHelper.saveLanguage(
+                                        this@MainActivity,
+                                        newProfile.language
+                                    )
                                     recreate()
                                 }
                             }
@@ -170,8 +175,17 @@ class MainActivity : ComponentActivity() {
                             profile = profile!!,
                             chatViewModel = chatViewModel,
                             glucoseViewModel = glucoseViewModel,
+                            authViewModel = authViewModel,
+                            onSignedOut = {
+                                // Drop back to the login screen and clear the
+                                // in-memory session so nothing leaks across users.
+                                isSignedIn = false
+                                selectedTab = 0
+                                showChatHistory = false
+                                selectedSession = null
+                            },
                             onAddReading = { showAddReading = true },
-                            onOpenSession = { selectedSession = it },
+                            // onOpenSession removed - MainTabScreen never used it.
                             onChatHistory = { showChatHistory = true },
                             onEditProfile = { showOnboarding = true }
                         )
@@ -180,6 +194,7 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
     override fun onStop() {
         super.onStop()
         val vm = chatVM

@@ -8,6 +8,9 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
@@ -27,8 +30,11 @@ fun MainTabScreen(
     profile: UserProfileData,
     chatViewModel: ChatViewModel,
     glucoseViewModel: GlucoseViewModel,
+    authViewModel: AuthViewModel,
+    onSignedOut: () -> Unit,
     onAddReading: () -> Unit,
-    onOpenSession: (ChatSession) -> Unit,
+    // onOpenSession removed: ChatHistoryScreen owns opening a session, and it
+    // is reached through onChatHistory. Nothing here ever called it.
     onChatHistory: () -> Unit,
     onEditProfile: () -> Unit
 ) {
@@ -116,7 +122,9 @@ fun MainTabScreen(
                 )
                 3 -> ProfileTabPlaceholder(
                     profile = profile,
-                    onEditProfile = onEditProfile
+                    onEditProfile = onEditProfile,
+                    authViewModel = authViewModel,
+                    onSignedOut = onSignedOut
                 )
             }
         }
@@ -124,11 +132,39 @@ fun MainTabScreen(
 }
 
 @Composable
-fun ProfileTabPlaceholder(profile: UserProfileData, onEditProfile: () -> Unit) {
+fun ProfileTabPlaceholder(
+    profile: UserProfileData,
+    onEditProfile: () -> Unit,
+    authViewModel: AuthViewModel,
+    onSignedOut: () -> Unit
+) {
     val context = LocalContext.current
     val activity = context as? android.app.Activity
     val scope = rememberCoroutineScope()
     val profileRepo = remember { ProfileRepository(context) }
+    var showSignOutDialog by remember { mutableStateOf(false) }
+
+    if (showSignOutDialog) {
+        AlertDialog(
+            onDismissRequest = { showSignOutDialog = false },
+            title = { Text(stringResource(R.string.sign_out)) },
+            text = { Text(stringResource(R.string.sign_out_confirm)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    showSignOutDialog = false
+                    authViewModel.signOut()
+                    onSignedOut()
+                }) {
+                    Text(stringResource(R.string.sign_out), color = Color(0xFFD32F2F))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showSignOutDialog = false }) {
+                    Text(stringResource(R.string.cancel))
+                }
+            }
+        )
+    }
 
     Column(
         modifier = Modifier
@@ -171,6 +207,19 @@ fun ProfileTabPlaceholder(profile: UserProfileData, onEditProfile: () -> Unit) {
             onClick = onEditProfile,
             colors = ButtonDefaults.buttonColors(containerColor = TealGreen)
         ) { Text(stringResource(R.string.edit_my_information)) }
+
+        Spacer(Modifier.weight(1f))
+
+        // Sign out. Health data on a shared phone needs a way out - without
+        // this, handing the phone to a family member exposes glucose history
+        // and every past conversation.
+        OutlinedButton(
+            onClick = { showSignOutDialog = true },
+            colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFD32F2F)),
+            border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFD32F2F))
+        ) { Text(stringResource(R.string.sign_out)) }
+
+        Spacer(Modifier.height(16.dp))
     }
 }
 

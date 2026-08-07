@@ -24,7 +24,7 @@ import androidx.compose.ui.unit.sp
  * Technology on the right, equally sized and evenly spaced.
  *
  * Both source images are white-background JPEGs, so they sit inside a single
- * white card. That keeps them legible on any background colour and stops the
+ * white card. That keeps them legible on any background color and stops the
  * two logos - which have very different visual weight - from looking mismatched.
  *
  * Sizing is responsive: the logo height scales with available width but is
@@ -33,7 +33,7 @@ import androidx.compose.ui.unit.sp
  *
  * @param caption small label above the logos. Pass null to hide it.
  *                CHECK THE WORDING against your actual relationship with
- *                these organisations before shipping.
+ *                these organizations before shipping.
  */
 @Composable
 fun OrganizationLogos(
@@ -108,37 +108,5 @@ fun OrganizationLogos(
                 }
             }
         }
-    }
-}
-
-/**
- * Compact variant with no card or caption - for screens that already sit on a
- * white background and only need the two marks.
- */
-@Composable
-fun OrganizationLogosCompact(
-    modifier: Modifier = Modifier,
-    logoSize: Dp = 40.dp
-) {
-    Row(
-        modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Image(
-            painter = painterResource(R.drawable.pcsir_logo),
-            contentDescription =
-                "Pakistan Council of Scientific and Industrial Research",
-            contentScale = ContentScale.Fit,
-            modifier = Modifier.size(logoSize)
-        )
-        Spacer(Modifier.width(24.dp))
-        Image(
-            painter = painterResource(R.drawable.ministry_logo),
-            contentDescription =
-                "Ministry of Science and Technology, Government of Pakistan",
-            contentScale = ContentScale.Fit,
-            modifier = Modifier.size(logoSize)
-        )
     }
 }

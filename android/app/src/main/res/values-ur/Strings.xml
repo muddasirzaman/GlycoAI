@@ -2,6 +2,7 @@
 <resources>
     <string name="in_collaboration_with">اشتراک کے ساتھ</string>
     <string name="daily_tips_title">💡 آج کے مشورے</string>
+
     <!-- Login -->
     <string name="login_title">گلائیکو اے آئی میں خوش آمدید</string>
     <string name="login_subtitle">جاری رکھنے کے لیے اپنا موبائل نمبر درج کریں</string>
@@ -26,6 +27,10 @@
     <string name="log_in">لاگ ان کریں</string>
     <string name="switch_to_login">پہلے سے اکاؤنٹ ہے؟ لاگ ان کریں</string>
     <string name="switch_to_signup">اکاؤنٹ نہیں ہے؟ سائن اپ کریں</string>
+    <string name="sign_out">سائن آؤٹ</string>
+    <string name="sign_out_confirm">دوبارہ سائن اِن کرنے کے لیے آپ کو اپنا فون نمبر اور نیا کوڈ درکار ہوگا۔ آپ کی محفوظ ریڈنگز اور گفتگو اسی فون میں رہیں گی۔</string>
+    <string name="cancel">منسوخ کریں</string>
+
 
     <string name="language_label">زبان</string>
     <string name="lang_english">English</string>
