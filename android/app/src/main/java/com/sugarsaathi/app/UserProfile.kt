@@ -37,16 +37,27 @@ object ProfileKeys {
     val DIET_PLAN = stringPreferencesKey("diet_plan")
     val PURPOSE = stringPreferencesKey("purpose")
 
-    // FIX: these two existed on UserProfileData but were never persisted,
-    // so insulin type was always null and other conditions always empty.
     val INSULIN_TYPE = stringPreferencesKey("insulin_type")
     val OTHER_CONDITIONS = stringPreferencesKey("other_conditions")
 
-    // Informed consent. Stored with a timestamp so there is a record of WHEN
-    // the user agreed - needed if the disclaimer ever materially changes and
-    // users have to be re-prompted.
     val CONSENT_ACCEPTED = booleanPreferencesKey("consent_accepted")
     val CONSENT_TIMESTAMP = longPreferencesKey("consent_timestamp")
+
+    // NEW: allergies - sent to the chatbot, since a food/med answer that
+    // ignores an allergy is a real safety failure, not a nicety.
+    val ALLERGIES = stringPreferencesKey("allergies")
+
+    // NEW: when HbA1c was last measured. Sent to the chatbot alongside the
+    // value so it can judge whether the number is stale.
+    val HBA1C_DATE = stringPreferencesKey("hba1c_date")
+
+    // NEW: doctor info + emergency contact. Profile-only - deliberately never
+    // mapped into ProfileData / sent to the backend. A food question has no
+    // business carrying someone's doctor's phone number.
+    val DOCTOR_NAME = stringPreferencesKey("doctor_name")
+    val DOCTOR_PHONE = stringPreferencesKey("doctor_phone")
+    val EMERGENCY_CONTACT_NAME = stringPreferencesKey("emergency_contact_name")
+    val EMERGENCY_CONTACT_PHONE = stringPreferencesKey("emergency_contact_phone")
 }
 
 
@@ -84,6 +95,14 @@ data class UserProfileData(
     val purpose: String = "patient",
     val consentAccepted: Boolean = false,
     val consentTimestamp: Long = 0L,
+
+    // NEW
+    val allergies: List<String> = emptyList(),
+    val hba1cDate: String? = null,
+    val doctorName: String = "",
+    val doctorPhone: String = "",
+    val emergencyContactName: String = "",
+    val emergencyContactPhone: String = "",
 )
 
 // Handles saving and loading profile
@@ -126,12 +145,20 @@ class ProfileRepository(private val context: Context) {
             dietPlan = prefs[ProfileKeys.DIET_PLAN] ?: "",
             purpose = prefs[ProfileKeys.PURPOSE] ?: "patient",
 
-            // FIX: now actually read back
             insulinType = prefs[ProfileKeys.INSULIN_TYPE]?.ifEmpty { null },
             otherConditions = (prefs[ProfileKeys.OTHER_CONDITIONS] ?: "")
                 .split("|||").filter { it.isNotEmpty() },
             consentAccepted = prefs[ProfileKeys.CONSENT_ACCEPTED] ?: false,
             consentTimestamp = prefs[ProfileKeys.CONSENT_TIMESTAMP] ?: 0L,
+
+            // NEW
+            allergies = (prefs[ProfileKeys.ALLERGIES] ?: "")
+                .split("|||").filter { it.isNotEmpty() },
+            hba1cDate = prefs[ProfileKeys.HBA1C_DATE]?.ifEmpty { null },
+            doctorName = prefs[ProfileKeys.DOCTOR_NAME] ?: "",
+            doctorPhone = prefs[ProfileKeys.DOCTOR_PHONE] ?: "",
+            emergencyContactName = prefs[ProfileKeys.EMERGENCY_CONTACT_NAME] ?: "",
+            emergencyContactPhone = prefs[ProfileKeys.EMERGENCY_CONTACT_PHONE] ?: "",
         )
     }
 
@@ -164,25 +191,26 @@ class ProfileRepository(private val context: Context) {
             prefs[ProfileKeys.DIET_PLAN] = profile.dietPlan
             prefs[ProfileKeys.PURPOSE] = profile.purpose
 
-            // FIX: now actually written
             prefs[ProfileKeys.INSULIN_TYPE] = profile.insulinType ?: ""
             prefs[ProfileKeys.OTHER_CONDITIONS] = profile.otherConditions.joinToString("|||")
 
-            // Never downgrade an existing consent to false on a profile save.
             if (profile.consentAccepted) {
                 prefs[ProfileKeys.CONSENT_ACCEPTED] = true
                 prefs[ProfileKeys.CONSENT_TIMESTAMP] =
                     if (profile.consentTimestamp > 0L) profile.consentTimestamp
                     else System.currentTimeMillis()
             }
+
+            // NEW
+            prefs[ProfileKeys.ALLERGIES] = profile.allergies.joinToString("|||")
+            prefs[ProfileKeys.HBA1C_DATE] = profile.hba1cDate ?: ""
+            prefs[ProfileKeys.DOCTOR_NAME] = profile.doctorName
+            prefs[ProfileKeys.DOCTOR_PHONE] = profile.doctorPhone
+            prefs[ProfileKeys.EMERGENCY_CONTACT_NAME] = profile.emergencyContactName
+            prefs[ProfileKeys.EMERGENCY_CONTACT_PHONE] = profile.emergencyContactPhone
         }
     }
 
-    /**
-     * Records consent on its own, for users who onboarded before this screen
-     * existed. Not called yet - wire it in when you add the re-consent check
-     * at launch for existing users.
-     */
     @Suppress("unused")
     suspend fun saveConsent() {
         context.dataStore.edit { prefs ->

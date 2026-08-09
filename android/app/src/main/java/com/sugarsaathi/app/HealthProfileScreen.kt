@@ -32,7 +32,21 @@ fun HealthProfileScreen(
     onEmergencyToggle: (String) -> Unit,
     onDietChange: (String) -> Unit,
     onBack: () -> Unit,
-    onNext: () -> Unit
+    onNext: () -> Unit,
+
+    // NEW - all default so existing callers keep compiling until wired up.
+    allergies: String = "",
+    onAllergiesChange: (String) -> Unit = {},
+    hba1cDate: String = "",
+    onHba1cDateChange: (String) -> Unit = {},
+    doctorName: String = "",
+    onDoctorNameChange: (String) -> Unit = {},
+    doctorPhone: String = "",
+    onDoctorPhoneChange: (String) -> Unit = {},
+    emergencyContactName: String = "",
+    onEmergencyContactNameChange: (String) -> Unit = {},
+    emergencyContactPhone: String = "",
+    onEmergencyContactPhoneChange: (String) -> Unit = {}
 ) {
     // BMI live calculation
     val bmiText: String? = remember(weight, height) {
@@ -197,6 +211,115 @@ fun HealthProfileScreen(
         Spacer(Modifier.height(6.dp))
         SelectableCard(stringResource(R.string.diet_vegan), "", dietPlan == "Vegan") { onDietChange("Vegan") }
 
+        Spacer(Modifier.height(24.dp))
+
+        // ── NEW: Allergies ──
+        // Sent to the chatbot - a wrong food/med recommendation here is a
+        // real safety failure, so this gets its own clearly-labeled section
+        // rather than being folded into "Other conditions".
+        SectionLabel("Allergies")
+        Text(
+            "List any food or medicine allergies, separated by commas. " +
+                    "This is used to keep recommendations safe.",
+            fontSize = 12.sp,
+            color = Color.Gray,
+            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
+        )
+        OutlinedTextField(
+            value = allergies,
+            onValueChange = onAllergiesChange,
+            label = { Text("Allergies (optional)") },
+            placeholder = { Text("e.g. Penicillin, Peanuts") },
+            modifier = Modifier.fillMaxWidth(),
+            minLines = 2,
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedTextColor = Color.Black, unfocusedTextColor = Color.Black
+            )
+        )
+
+        Spacer(Modifier.height(20.dp))
+
+        // ── NEW: HbA1c date ──
+        SectionLabel("Last HbA1c Test Date")
+        OutlinedTextField(
+            value = hba1cDate,
+            onValueChange = onHba1cDateChange,
+            label = { Text("When was it measured? (optional)") },
+            placeholder = { Text("e.g. March 2026") },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedTextColor = Color.Black, unfocusedTextColor = Color.Black
+            )
+        )
+
+        Spacer(Modifier.height(24.dp))
+
+        // ── NEW: Doctor information ──
+        // Profile-only - never sent to the chatbot. Kept here purely so the
+        // patient has it in one place in the app.
+        SectionLabel("Doctor Information")
+        Text(
+            "For your own reference - this is not shared with the chatbot.",
+            fontSize = 12.sp,
+            color = Color.Gray,
+            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
+        )
+        OutlinedTextField(
+            value = doctorName,
+            onValueChange = onDoctorNameChange,
+            label = { Text("Doctor's name (optional)") },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedTextColor = Color.Black, unfocusedTextColor = Color.Black
+            )
+        )
+        Spacer(Modifier.height(12.dp))
+        OutlinedTextField(
+            value = doctorPhone,
+            onValueChange = onDoctorPhoneChange,
+            label = { Text("Doctor's phone (optional)") },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedTextColor = Color.Black, unfocusedTextColor = Color.Black
+            )
+        )
+
+        Spacer(Modifier.height(24.dp))
+
+        // ── NEW: Emergency contact ──
+        // Also profile-only - never sent to the chatbot.
+        SectionLabel("Emergency Contact")
+        Text(
+            "For your own reference - this is not shared with the chatbot.",
+            fontSize = 12.sp,
+            color = Color.Gray,
+            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
+        )
+        OutlinedTextField(
+            value = emergencyContactName,
+            onValueChange = onEmergencyContactNameChange,
+            label = { Text("Contact name (optional)") },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedTextColor = Color.Black, unfocusedTextColor = Color.Black
+            )
+        )
+        Spacer(Modifier.height(12.dp))
+        OutlinedTextField(
+            value = emergencyContactPhone,
+            onValueChange = onEmergencyContactPhoneChange,
+            label = { Text("Contact phone (optional)") },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedTextColor = Color.Black, unfocusedTextColor = Color.Black
+            )
+        )
+
         Spacer(Modifier.height(28.dp))
 
         Row(
@@ -206,14 +329,6 @@ fun HealthProfileScreen(
             OutlinedButton(onClick = onBack, modifier = Modifier.weight(1f)) {
                 Text(stringResource(R.string.back_button))
             }
-            Button(
-                onClick = onNext,
-                modifier = Modifier.weight(2f),
-                colors = ButtonDefaults.buttonColors(containerColor = TealGreen)
-            ) {
-                Text(stringResource(R.string.next_button))
-            }
-
             Button(
                 onClick = onNext,
                 modifier = Modifier.weight(2f),

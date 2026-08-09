@@ -119,3 +119,11 @@ fun SuggestionCard(suggestion: GlucoseSuggestion) {
         }
     }
 }
+
+// A plain, non-Composable version of the urgency check, since it needs to run
+// inside a button's onClick handler, which can't call Composable functions.
+// Mirrors the exact same thresholds as suggestionFor()'s isUrgent flags below.
+fun isUrgentReading(value: Float, unit: String): Boolean {
+    val mgdl = if (unit == "mmol/L") value * 18f else value
+    return mgdl < 70f || mgdl > 400f
+}

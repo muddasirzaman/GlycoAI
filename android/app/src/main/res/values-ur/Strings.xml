@@ -3,6 +3,8 @@
     <string name="in_collaboration_with">اشتراک کے ساتھ</string>
     <string name="daily_tips_title">💡 آج کے مشورے</string>
     <string name="developed_in_collaboration">کے اشتراک سے تیار کیا گیا</string>
+    <string name="i_understand">میں سمجھ گیا/گئی</string>
+
     <!-- Login -->
     <string name="login_title">گلائیکو اے آئی میں خوش آمدید</string>
     <string name="login_subtitle">جاری رکھنے کے لیے اپنا موبائل نمبر درج کریں</string>
@@ -228,6 +230,10 @@
     <string name="add_reading">＋  ریڈنگ شامل کریں</string>
     <string name="view_my_readings">📊  میری ریڈنگز دیکھیں</string>
 
+    <string name="report_title">رپورٹ شیئر کریں</string>
+    <string name="report_choose_range">رپورٹ کس عرصے کی ہو؟</string>
+    <string name="report_share">رپورٹ شیئر کریں</string>
+    <string name="report_failed">رپورٹ نہیں بن سکی</string>
 
     <string name="chart_title">آپ کا رجحان</string>
     <string name="chart_7_days">۷ دن</string>

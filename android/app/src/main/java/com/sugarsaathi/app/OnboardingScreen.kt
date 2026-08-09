@@ -26,6 +26,13 @@ import androidx.compose.ui.unit.LayoutDirection
 // means the insulin-type question is relevant even for type 2.
 private val INSULIN_BRANDS = setOf("Mixtard", "Lantus")
 
+// Total number of *counted* onboarding steps - screens 1 (Language) and
+// 2 (Consent) are intentionally not part of this count, since the progress
+// indicator only appears from screen 3 onward. Counted screens are
+// 3, 4, 5, 6, 7, 8 - that's 6 total. Single source of truth for the
+// progress bar and the "Step X of Y" text.
+private const val TOTAL_ONBOARDING_STEPS = 6
+
 @Composable
 fun OnboardingScreen(onComplete: (UserProfileData) -> Unit) {
 
@@ -51,7 +58,12 @@ fun OnboardingScreen(onComplete: (UserProfileData) -> Unit) {
     var emergencies by remember { mutableStateOf(setOf<String>()) }
     var dietPlan by remember { mutableStateOf("") }
     var purpose by remember { mutableStateOf("") }
-
+    var allergies by remember { mutableStateOf("") }
+    var hba1cDate by remember { mutableStateOf("") }
+    var doctorName by remember { mutableStateOf("") }
+    var doctorPhone by remember { mutableStateOf("") }
+    var emergencyContactName by remember { mutableStateOf("") }
+    var emergencyContactPhone by remember { mutableStateOf("") }
     // NEW: optional, and only asked when insulin is actually relevant.
     var insulinType by remember { mutableStateOf("") }
 
@@ -86,20 +98,32 @@ fun OnboardingScreen(onComplete: (UserProfileData) -> Unit) {
                 .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(
-                text = stringResource(R.string.step_progress, currentScreen),
-                fontSize = 13.sp,
-                color = Color.Gray,
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
+            // Steps 1 (Language) and 2 (Consent) aren't part of the counted
+            // questionnaire - the visible "Step X of 6" only starts once the
+            // user reaches Purpose (screen 3). Everything before that has no
+            // progress indicator at all.
+            if (currentScreen >= 3) {
+                val displayedStep = currentScreen - 2   // 3→1, 4→2, ..., 8→6
 
-            LinearProgressIndicator(
-                progress = { currentScreen / 8f },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 32.dp),
-                color = TealGreen
-            )
+                Text(
+                    text = stringResource(
+                        R.string.step_progress,
+                        displayedStep,
+                        TOTAL_ONBOARDING_STEPS
+                    ),
+                    fontSize = 13.sp,
+                    color = Color.Gray,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+
+                LinearProgressIndicator(
+                    progress = { displayedStep / TOTAL_ONBOARDING_STEPS.toFloat() },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 32.dp),
+                    color = TealGreen
+                )
+            }
 
             when (currentScreen) {
 
@@ -153,8 +177,8 @@ fun OnboardingScreen(onComplete: (UserProfileData) -> Unit) {
                     onDiagnosisYearChange = { diagnosisYear = it },
                     onHba1cChange = { hba1c = it },
                     onGlucoseUnitChange = { glucoseUnit = it },
-                    onNext = { currentScreen = 6 },
-                    onBack = { currentScreen = 4 }
+                    onNext = { currentScreen = 5 },
+                    onBack = { currentScreen = 3 }
                 )
 
                 5 -> Screen3DiabetesType(
@@ -194,8 +218,8 @@ fun OnboardingScreen(onComplete: (UserProfileData) -> Unit) {
                         }
                     },
 
-                    onBack = { currentScreen = 6 },
-                    onNext = { currentScreen = 8 }
+                    onBack = { currentScreen = 5 },
+                    onNext = { currentScreen = 7 }
                 )
 
                 7 -> HealthProfileScreen(
@@ -220,7 +244,21 @@ fun OnboardingScreen(onComplete: (UserProfileData) -> Unit) {
                     },
                     onDietChange = { dietPlan = it },
                     onBack = { currentScreen = 6 },
-                    onNext = { currentScreen = 8 }
+                    onNext = { currentScreen = 8 },
+
+                    // NEW
+                    allergies = allergies,
+                    onAllergiesChange = { allergies = it },
+                    hba1cDate = hba1cDate,
+                    onHba1cDateChange = { hba1cDate = it },
+                    doctorName = doctorName,
+                    onDoctorNameChange = { doctorName = it },
+                    doctorPhone = doctorPhone,
+                    onDoctorPhoneChange = { doctorPhone = it },
+                    emergencyContactName = emergencyContactName,
+                    onEmergencyContactNameChange = { emergencyContactName = it },
+                    emergencyContactPhone = emergencyContactPhone,
+                    onEmergencyContactPhoneChange = { emergencyContactPhone = it }
                 )
 
                 8 -> Screen5Medications(
@@ -285,7 +323,12 @@ fun OnboardingScreen(onComplete: (UserProfileData) -> Unit) {
                                 monitoringMethod = monitoring,
                                 emergencyHistory = emergencies.toList(),
                                 dietPlan = dietPlan,
-
+                                allergies = allergies.split(",").map { it.trim() }.filter { it.isNotEmpty() },
+                                hba1cDate = hba1cDate.ifBlank { null },
+                                doctorName = doctorName,
+                                doctorPhone = doctorPhone,
+                                emergencyContactName = emergencyContactName,
+                                emergencyContactPhone = emergencyContactPhone,
                                 // NEW: optional - null when not asked or not answered
                                 insulinType = insulinType.ifBlank { null },
 

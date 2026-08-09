@@ -1,11 +1,5 @@
 package com.sugarsaathi.app
 
-// What we send TO the server.
-//
-// The underscore names are deliberate: they mirror the FastAPI field names
-// exactly, which is what lets the JSON map straight across. Renaming them to
-// camelCase would break every request silently, so the naming inspection is
-// suppressed rather than obeyed.
 @Suppress("PropertyName")
 data class ProfileData(
 
@@ -32,9 +26,16 @@ data class ProfileData(
     val purpose: String = "patient",
     val glucose_summary: String? = null,
 
-    )
+    // NEW: sent to the backend - these change what's safe to recommend.
+    val allergies: List<String> = emptyList(),
+    val hba1c_date: String? = null,
 
-// Converts the app's onboarding profile into the shape the backend expects.
+    // Deliberately NOT included: doctor_name, doctor_phone,
+    // emergency_contact_name, emergency_contact_phone. Those are contact
+    // details, not clinical context - a "can I eat mango" question has no
+    // reason to carry a phone number to the backend.
+)
+
 fun UserProfileData.toApiProfileData(glucoseSummary: String? = null): ProfileData {
     return ProfileData(
         name = name,
@@ -45,20 +46,11 @@ fun UserProfileData.toApiProfileData(glucoseSummary: String? = null): ProfileDat
         diagnosis_year = diagnosisYear,
         insulin_type = insulinType,
         medications = medications,
-
-        // FIX: onboarding stores these in monitoringMethod / emergencyHistory.
-        // The old mapping read glucoseMonitoring / severeHypoglycemia, which
-        // onboarding never sets, so the backend always saw null.
         glucose_monitoring = glucoseMonitoring
             ?: monitoringMethod.ifBlank { null },
         severe_hypoglycemia = severeHypoglycemia
             ?: emergencyHistory.joinToString(", ").ifBlank { null },
-
-        // FIX: the onboarding conditions screen writes everything into
-        // `complications`, but the backend's kidney / heart / BP rules read
-        // `other_conditions`. Send the union so those rules actually fire.
         other_conditions = (otherConditions + complications).distinct(),
-
         hba1c = hba1c,
         complications = complications,
         language = language,
@@ -70,6 +62,10 @@ fun UserProfileData.toApiProfileData(glucoseSummary: String? = null): ProfileDat
         smoking_status = smokingStatus,
         purpose = purpose,
         glucose_summary = glucoseSummary,
+
+        // NEW
+        allergies = allergies,
+        hba1c_date = hba1cDate,
     )
 }
 
@@ -85,13 +81,6 @@ data class ChatRequest(
     val document_name: String? = null
 )
 
-// What we receive FROM the server.
-//
-// IMPORTANT: every new field is nullable on purpose. Gson does NOT apply Kotlin
-// default values - it allocates the object directly, so a field missing from the
-// JSON stays null even when the Kotlin type says non-null. Declaring these as
-// non-null List/Boolean would throw at runtime against an older backend.
-// Nullable + the helper accessors below keeps old and new servers both working.
 @Suppress("PropertyName")
 data class ChatResponse(
     val response: String,
@@ -104,7 +93,6 @@ data class ChatResponse(
     val quickReplies: List<String> get() = quick_replies.orEmpty()
 }
 
-// A single chat message (user or AI)
 data class Message(
     val role: String,
     val content: String

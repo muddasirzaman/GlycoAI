@@ -118,6 +118,7 @@ fun MainTabScreen(
                 )
                 2 -> GlucoseHistoryScreen(
                     glucoseViewModel = glucoseViewModel,
+                    profile = profile,
                     onBack = { onTabSelected(0) }
                 )
                 3 -> ProfileTabPlaceholder(

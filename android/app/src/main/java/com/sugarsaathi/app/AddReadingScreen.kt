@@ -28,6 +28,8 @@ fun AddReadingScreen(
     var readingType by remember { mutableStateOf("Fasting") }
     var note by remember { mutableStateOf("") }
     var errorText by remember { mutableStateOf<String?>(null) }
+    var pendingUrgentReading by remember { mutableStateOf<Float?>(null) }
+
     val errValidNumber = stringResource(R.string.enter_valid_number)
     val errRangeMgdl = stringResource(R.string.range_error_mgdl)
     val errRangeMmol = stringResource(R.string.range_error_mmol)
@@ -51,14 +53,21 @@ fun AddReadingScreen(
         "Missed medication" to stringResource(R.string.qn_missed_med)
     )
 
-    Column(modifier = Modifier.fillMaxSize()) {
+    Column(
+        modifier = Modifier.fillMaxSize()
+    ) {
 
         TopAppBar(
-            title = { Text(stringResource(R.string.add_glucose_reading), fontSize = 18.sp) },
+            title = {
+                Text(
+                    stringResource(R.string.add_glucose_reading),
+                    fontSize = 18.sp
+                )
+            },
             navigationIcon = {
                 IconButton(onClick = onBack) {
                     Icon(
-                        Icons.AutoMirrored.Filled.ArrowBack,
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "Back",
                         tint = Color.White
                     )
@@ -77,21 +86,41 @@ fun AddReadingScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(20.dp)
         ) {
+
             // Glucose value
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(stringResource(R.string.blood_glucose_reading), fontSize = 15.sp, fontWeight = FontWeight.Medium)
-                Text(" *", color = Color.Red, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    stringResource(R.string.blood_glucose_reading),
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Medium
+                )
+
+                Text(
+                    " *",
+                    color = Color.Red,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 15.sp
+                )
             }
 
             Spacer(Modifier.height(8.dp))
+
             OutlinedTextField(
                 value = value,
                 onValueChange = {
-                    value = it.filter { c -> c.isDigit() || c == '.' }
+                    value = it.filter { c ->
+                        c.isDigit() || c == '.'
+                    }
                     errorText = null
                 },
-                placeholder = { Text(stringResource(R.string.glucose_hint)) },
-                suffix = { Text(defaultUnit) },
+                placeholder = {
+                    Text(stringResource(R.string.glucose_hint))
+                },
+                suffix = {
+                    Text(defaultUnit)
+                },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 colors = OutlinedTextFieldDefaults.colors(
@@ -103,39 +132,72 @@ fun AddReadingScreen(
             Spacer(Modifier.height(20.dp))
 
             // Reading type
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(stringResource(R.string.when_taken), fontSize = 15.sp, fontWeight = FontWeight.Medium)
-                Text(" *", color = Color.Red, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    stringResource(R.string.when_taken),
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Medium
+                )
+
+                Text(
+                    " *",
+                    color = Color.Red,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 15.sp
+                )
             }
+
             Spacer(Modifier.height(8.dp))
-            readingTypes.forEach { (value, label) ->
+
+            readingTypes.forEach { (typeValue, label) ->
+
                 ReadingTypeRow(
                     label = label,
-                    selected = readingType == value,
-                    onClick = { readingType = value }
+                    selected = readingType == typeValue,
+                    onClick = {
+                        readingType = typeValue
+                    }
                 )
+
                 Spacer(Modifier.height(6.dp))
             }
 
             Spacer(Modifier.height(20.dp))
 
             // Quick notes
-            Text(stringResource(R.string.notes_optional), fontSize = 15.sp, fontWeight = FontWeight.Medium)
+            Text(
+                stringResource(R.string.notes_optional),
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Medium
+            )
+
             Spacer(Modifier.height(8.dp))
-            quickNotes.forEach { (value, label) ->
+
+            quickNotes.forEach { (noteValue, label) ->
+
                 ReadingTypeRow(
                     label = label,
-                    selected = note == value,
-                    onClick = { note = if (note == value) "" else value }
+                    selected = note == noteValue,
+                    onClick = {
+                        note = if (note == noteValue) "" else noteValue
+                    }
                 )
+
                 Spacer(Modifier.height(6.dp))
             }
 
             Spacer(Modifier.height(8.dp))
+
             OutlinedTextField(
                 value = if (quickNotes.any { it.first == note }) "" else note,
-                onValueChange = { note = it },
-                placeholder = { Text(stringResource(R.string.type_own_note)) },
+                onValueChange = {
+                    note = it
+                },
+                placeholder = {
+                    Text(stringResource(R.string.type_own_note))
+                },
                 modifier = Modifier.fillMaxWidth(),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedTextColor = Color.Black,
@@ -145,43 +207,119 @@ fun AddReadingScreen(
 
             errorText?.let {
                 Spacer(Modifier.height(12.dp))
-                Text(it, color = MaterialTheme.colorScheme.error, fontSize = 13.sp)
+
+                Text(
+                    text = it,
+                    color = MaterialTheme.colorScheme.error,
+                    fontSize = 13.sp
+                )
             }
 
             Spacer(Modifier.height(28.dp))
 
             Button(
                 onClick = {
+
                     val num = value.toFloatOrNull()
+
                     if (num == null) {
                         errorText = errValidNumber
                         return@Button
                     }
+
                     val ok = glucoseViewModel.addReading(
                         value = num,
                         unit = defaultUnit,
                         readingType = readingType,
                         note = note
                     )
+
                     if (ok) {
-                        onSaved()
+
+                        if (isUrgentReading(num, defaultUnit)) {
+
+                            // Reading is already saved.
+                            // Keep the screen open so the user can see
+                            // the safety message.
+                            pendingUrgentReading = num
+
+                        } else {
+                            onSaved()
+                        }
+
                     } else {
-                        errorText = if (defaultUnit == "mmol/L") errRangeMmol else errRangeMgdl
+
+                        errorText =
+                            if (defaultUnit == "mmol/L") {
+                                errRangeMmol
+                            } else {
+                                errRangeMgdl
+                            }
                     }
                 },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(52.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = TealGreen)
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = TealGreen
+                )
             ) {
-                Text(stringResource(R.string.save_reading), fontSize = 16.sp)
+                Text(
+                    stringResource(R.string.save_reading),
+                    fontSize = 16.sp
+                )
             }
 
             Spacer(Modifier.height(20.dp))
         }
     }
-}
 
+    // IMPORTANT:
+    // This is still INSIDE AddReadingScreen.
+    pendingUrgentReading?.let { urgentValue ->
+
+        val suggestion = suggestionFor(
+            urgentValue,
+            defaultUnit,
+            seed = System.currentTimeMillis()
+        )
+
+        AlertDialog(
+            onDismissRequest = {
+                // Do not allow accidental dismissal
+            },
+            title = {
+                Text(
+                    text = suggestion.title,
+                    color = suggestion.color,
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            text = {
+                Text(
+                    text = suggestion.message,
+                    fontSize = 14.sp,
+                    lineHeight = 20.sp
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        pendingUrgentReading = null
+                        onSaved()
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = suggestion.color
+                    )
+                ) {
+                    Text(
+                        stringResource(R.string.i_understand)
+                    )
+                }
+            }
+        )
+    }
+}
 @Composable
 fun ReadingTypeRow(label: String, selected: Boolean, onClick: () -> Unit) {
     Card(

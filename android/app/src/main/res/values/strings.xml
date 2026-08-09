@@ -2,6 +2,8 @@
     <string name="in_collaboration_with">In collaboration with</string>
     <string name="daily_tips_title">💡 Today\'s tips</string>
 
+    <string name="i_understand">I Understand</string>
+
     <string name="developed_in_collaboration">Developed in Collaboration with</string>
     <!-- Login -->
     <string name="login_title">Welcome to GlycoAI</string>
@@ -239,6 +241,12 @@
     <string name="enter_valid_number">Please enter a valid number.</string>
     <string name="range_error_mgdl">Reading must be between 20 and 700 mg/dL.</string>
     <string name="range_error_mmol">Reading must be between 1 and 40 mmol/L.</string>
+
+
+    <string name="report_title">Share report</string>
+    <string name="report_choose_range">Which period should the report cover?</string>
+    <string name="report_share">Share report</string>
+    <string name="report_failed">Could not create the report</string>
 
     <string name="chart_title">Your trend</string>
     <string name="chart_7_days">7 days</string>

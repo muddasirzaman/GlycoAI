@@ -9,15 +9,22 @@ import androidx.compose.foundation.background
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.res.stringResource
+import android.widget.Toast
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -27,11 +34,54 @@ import java.util.Locale
 @Composable
 fun GlucoseHistoryScreen(
     glucoseViewModel: GlucoseViewModel,
+    profile: UserProfileData,
     onBack: () -> Unit
 ) {
     val readings by glucoseViewModel.readings.collectAsState()
     val summary = remember(readings) { glucoseViewModel.sevenDaySummary() }
     val latest = readings.firstOrNull()   // list is newest-first
+
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var exporting by remember { mutableStateOf(false) }
+    var showRangeDialog by remember { mutableStateOf(false) }
+    val exportFailed = stringResource(R.string.report_failed)
+
+    fun export(days: Int) {
+        showRangeDialog = false
+        exporting = true
+        scope.launch {
+            // Drawing and file IO - keep it off the main thread or the UI
+            // freezes while a large report is built.
+            val uri = withContext(Dispatchers.IO) {
+                GlucoseReport.generate(context, profile, readings, days)
+            }
+            exporting = false
+            if (uri != null) {
+                GlucoseReport.share(context, uri)
+            } else {
+                Toast.makeText(context, exportFailed, Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    if (showRangeDialog) {
+        AlertDialog(
+            onDismissRequest = { showRangeDialog = false },
+            title = { Text(stringResource(R.string.report_title)) },
+            text = { Text(stringResource(R.string.report_choose_range)) },
+            confirmButton = {
+                TextButton(onClick = { export(30) }) {
+                    Text(stringResource(R.string.chart_30_days), color = TealGreen)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { export(7) }) {
+                    Text(stringResource(R.string.chart_7_days), color = TealGreen)
+                }
+            }
+        )
+    }
 
     Column(modifier = Modifier.fillMaxSize()) {
 
@@ -46,10 +96,31 @@ fun GlucoseHistoryScreen(
                     )
                 }
             },
+            actions = {
+                IconButton(
+                    enabled = readings.isNotEmpty() && !exporting,
+                    onClick = { showRangeDialog = true }
+                ) {
+                    if (exporting) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp),
+                            strokeWidth = 2.dp,
+                            color = Color.White
+                        )
+                    } else {
+                        Icon(
+                            Icons.Default.Share,
+                            contentDescription = stringResource(R.string.report_share),
+                            tint = Color.White
+                        )
+                    }
+                }
+            },
             colors = TopAppBarDefaults.topAppBarColors(
                 containerColor = TealGreen,
                 titleContentColor = Color.White,
-                navigationIconContentColor = Color.White
+                navigationIconContentColor = Color.White,
+                actionIconContentColor = Color.White
             )
         )
 
@@ -62,7 +133,7 @@ fun GlucoseHistoryScreen(
                     stringResource(R.string.no_readings_yet),
                     fontSize = 15.sp,
                     color = Color.Gray,
-                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                    textAlign = TextAlign.Center
                 )
             }
         } else {
@@ -234,4 +305,3 @@ fun SummaryStat(label: String, value: String, sub: String) {
         }
     }
 }
-
