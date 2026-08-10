@@ -138,7 +138,8 @@ SEVERE_SYMPTOM_WORDS = [
     "confus", "can't think straight", "disoriented", "slurring",
     "shaking", "sweating heavily", "vomit", "can't wake", "unconscious",
     "passed out", "not breathing", "can't breathe", "difficulty breathing",
-    "seizure", "chest pain", "collapse", "behosh"
+    "seizure", "chest pain", "collapse", "behosh",
+    "dizzy", "dizziness", "lightheaded", "light-headed", "faint", "fainting"
 ]
 
 
@@ -163,7 +164,7 @@ def check_safety(message: str, profile_unit: str = "mg/dL"):
         mgdl, raw_value, raw_unit = reading
         has_symptom = any(w in message_lower for w in SEVERE_SYMPTOM_WORDS)
 
-        if mgdl < GLUCOSE_SEVERE_LOW_MGDL or (mgdl < GLUCOSE_LOW_MGDL and has_symptom):
+        if mgdl <= GLUCOSE_SEVERE_LOW_MGDL or (mgdl < GLUCOSE_LOW_MGDL and has_symptom):
             return {
                 "blocked": True,
                 "response":
