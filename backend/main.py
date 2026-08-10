@@ -2,6 +2,8 @@ import sys
 sys.stdout.reconfigure(encoding="utf-8")
 
 import os
+import re
+import json
 from fastapi import FastAPI
 from pydantic import BaseModel, Field
 from anthropic import Anthropic
@@ -54,7 +56,6 @@ class ProfileData(BaseModel):
     purpose: str = "patient"
     glucose_summary: str | None = None
 
-    # NEW
     allergies: list[str] = Field(default_factory=list)
     hba1c_date: str | None = None
 
@@ -82,118 +83,208 @@ class ChatRequest(BaseModel):
 
 
 # =====================================================
+# Centralized Glucose Safety Thresholds
+# =====================================================
+# Single source of truth. The Android Tracker (Glucosesuggestion.kt)
+# already uses the same 70 / 400 mg/dL boundary values as isUrgentReading -
+# this is where a clinician should review/update them going forward.
+#
+# mg/dL is the canonical unit; mmol/L values are converted for comparison.
+GLUCOSE_SEVERE_LOW_MGDL = 54
+GLUCOSE_LOW_MGDL = 70
+GLUCOSE_HIGH_MGDL = 400
+
+
+def _to_mgdl(value: float, unit: str) -> float:
+    return value * 18 if "mmol" in unit.lower() else value
+
+
+# Matches "sugar is 45", "glucose 38", "sugar: 320 mg/dl", "shuger 3.1 mmol/l", etc.
+_GLUCOSE_PATTERN = re.compile(
+    r"(?:sugar|glucose|shuger|bg)\D{0,10}?(\d{1,3}(?:\.\d+)?)\s*(mmol\s*/?\s*l|mg\s*/?\s*dl)?",
+    re.IGNORECASE
+)
+
+
+def extract_glucose_reading(message: str, profile_unit: str = "mg/dL"):
+    """Returns (value_mgdl, raw_value, raw_unit) or None if no reading found."""
+    match = _GLUCOSE_PATTERN.search(message)
+    if not match:
+        return None
+    raw_value = float(match.group(1))
+    raw_unit = match.group(2) or profile_unit
+    return (_to_mgdl(raw_value, raw_unit), raw_value, raw_unit)
+
+
+# =====================================================
 # Emergency Detection
 # =====================================================
 
 EMERGENCY_WORDS = [
-
-    "unconscious",
-
-    "passed out",
-
-    "not breathing",
-
-    "can't breathe",
-
-    "difficulty breathing",
-
-    "seizure",
-
-    "stroke",
-
-    "heart attack",
-
-    "chest pain",
-
-    "collapse",
-
-    "behosh",
-
-    "sugar 30",
-
-    "sugar 40",
-
-    "sugar 50",
-
-    "glucose 30",
-
-    "glucose 40",
-
-    "glucose 50"
-
+    "unconscious", "passed out", "not breathing", "can't breathe",
+    "difficulty breathing", "seizure", "stroke", "heart attack",
+    "chest pain", "collapse", "behosh",
+    "sugar 30", "sugar 40", "sugar 50",
+    "glucose 30", "glucose 40", "glucose 50"
 ]
 
 DOSING_WORDS = [
+    "how many units", "how much insulin", "increase insulin",
+    "reduce insulin", "insulin dose", "change insulin",
+    "dose bata", "dose batao", "kitni insulin", "insulin kitni"
+]
 
-    "how many units",
-
-    "how much insulin",
-
-    "increase insulin",
-
-    "reduce insulin",
-
-    "insulin dose",
-
-    "change insulin",
-
-    "dose bata",
-
-    "dose batao",
-
-    "kitni insulin",
-
-    "insulin kitni"
-
+SEVERE_SYMPTOM_WORDS = [
+    "confus", "can't think straight", "disoriented", "slurring",
+    "shaking", "sweating heavily", "vomit", "can't wake", "unconscious",
+    "passed out", "not breathing", "can't breathe", "difficulty breathing",
+    "seizure", "chest pain", "collapse", "behosh"
 ]
 
 
-def check_safety(message: str):
+def check_safety(message: str, profile_unit: str = "mg/dL"):
 
     message_lower = message.lower()
 
+    # --- Keyword-based emergency phrases ---
     for word in EMERGENCY_WORDS:
-
         if word in message_lower:
-
             return {
-
                 "blocked": True,
-
                 "response":
                     "🚨 This may be a medical emergency. "
                     "Please call your local emergency services "
                     "(1122 in Pakistan) or go to the nearest hospital immediately."
-
             }
 
-    for word in DOSING_WORDS:
+    # --- Numeric glucose value + symptom context ---
+    reading = extract_glucose_reading(message, profile_unit)
+    if reading:
+        mgdl, raw_value, raw_unit = reading
+        has_symptom = any(w in message_lower for w in SEVERE_SYMPTOM_WORDS)
 
-        if word in message_lower:
-
+        if mgdl < GLUCOSE_SEVERE_LOW_MGDL or (mgdl < GLUCOSE_LOW_MGDL and has_symptom):
             return {
-
                 "blocked": True,
+                "response":
+                    "🚨 A reading this low, especially with what you're describing, "
+                    "may require urgent attention. If you're able to, take fast-acting "
+                    "sugar now, and please call 1122 or go to the nearest hospital "
+                    "if you don't improve quickly or feel worse."
+            }
 
+        if mgdl > GLUCOSE_HIGH_MGDL and has_symptom:
+            return {
+                "blocked": True,
+                "response":
+                    "🚨 A reading this high along with those symptoms may require "
+                    "urgent attention. Please call 1122 or go to the nearest hospital."
+            }
+        # High value with NO symptoms, or a low-but-not-severe value with no
+        # symptoms: deliberately NOT blocked here - falls through to the normal
+        # AI response, since the number alone shouldn't force an emergency reply.
+
+    # --- Dosing questions ---
+    for word in DOSING_WORDS:
+        if word in message_lower:
+            return {
+                "blocked": True,
                 "response":
                     "I cannot recommend or calculate insulin or medication doses. "
                     "Please follow your doctor's instructions or contact your healthcare provider."
-
             }
 
     return {
-
         "blocked": False,
-
         "response": None
-
     }
+
+
+# =====================================================
+# Minimum-Necessary Context Classifier
+# =====================================================
+#
+# Decides which profile CATEGORIES are relevant to this specific message,
+# so build_system_prompt only sends Claude what the question actually needs
+# instead of the full medical profile on every single turn.
+#
+# Deliberately keyword-based rather than an LLM call: it's auditable (you can
+# see exactly why a category fired), adds no latency/cost, and can't silently
+# misjudge relevance the way a model classification could.
+#
+# Two categories are NEVER filtered by this function - callers should treat
+# allergies and known_facts as always-on. See build_system_prompt.
+
+MEDICATION_KEYWORDS = [
+    "medicine", "medication", "drug", "pill", "tablet", "dose", "dosage",
+    "insulin", "metformin", "glucophage", "side effect", "prescription",
+    "dawa", "dawai"
+]
+
+CONDITION_KEYWORDS = [
+    "condition", "kidney", "heart", "blood pressure", "pregnan",
+    "disease", "gurda", "dil"
+]
+
+HBA1C_KEYWORDS = [
+    "hba1c", "a1c", "average glucose", "test result", "lab result"
+]
+
+COMPLICATION_KEYWORDS = [
+    "complication", "nerve", "eye", "foot", "retinopathy", "neuropathy",
+    "nephropathy", "vision", "wound", "ulcer", "numbness"
+]
+
+GLUCOSE_KEYWORDS = [
+    "sugar", "glucose", "reading", "level", "fasting", "spike", "high",
+    "low", "trend", "cgm", "meter", "shuger"
+]
+
+PHYSICAL_KEYWORDS = [
+    "weight", "bmi", "diet", "exercise", "smoke", "smoking", "obese",
+    "walk", "gym", "workout"
+]
+
+# If the question reads as a personal-advice request, keyword matching alone
+# tends to under-include - "what should I eat" doesn't hit any single
+# category keyword but clearly depends on the whole clinical picture.
+PERSONALIZED_ADVICE_KEYWORDS = [
+    "should i", "can i", "is it safe", "what about", "advice",
+    "recommend", "help me", "what should"
+]
+
+
+def classify_relevant_categories(message: str) -> set[str]:
+    m = message.lower()
+    categories: set[str] = set()
+
+    if any(k in m for k in MEDICATION_KEYWORDS):
+        categories.add("medications")
+    if any(k in m for k in CONDITION_KEYWORDS):
+        categories.add("conditions")
+    if any(k in m for k in HBA1C_KEYWORDS):
+        categories.add("hba1c")
+    if any(k in m for k in COMPLICATION_KEYWORDS):
+        categories.add("complications")
+    if any(k in m for k in GLUCOSE_KEYWORDS):
+        categories.add("glucose")
+    if any(k in m for k in PHYSICAL_KEYWORDS):
+        categories.add("physical")
+
+    if any(k in m for k in PERSONALIZED_ADVICE_KEYWORDS):
+        categories.update({
+            "medications", "conditions", "hba1c",
+            "complications", "glucose", "physical"
+        })
+
+    return categories
+
 
 # =====================================================
 # System Prompt Builder
 # =====================================================
 
-def build_system_prompt(profile: ProfileData) -> str:
+def build_system_prompt(profile: ProfileData, relevant_categories: set[str]) -> str:
 
     prompt = """
 You are GlycoAI, an AI diabetes education assistant designed for Pakistani patients.
@@ -228,10 +319,8 @@ friendly and easy-to-understand manner.
 
     if profile.language == "ur":
         prompt += "\nAlways respond in Urdu script.\n"
-
     elif profile.language == "en":
         prompt += "\nAlways respond only in English.\n"
-
     else:
         prompt += "\nRespond in the same language used by the patient.\n"
 
@@ -337,25 +426,22 @@ render Markdown tables, headings, or pipe characters. Follow these rules:
 """
 
     # -------------------------------------------------
-    # Patient Profile
+    # Patient Profile (minimum-necessary: only relevant
+    # categories are included below, plus the always-on set)
     # -------------------------------------------------
 
     prompt += "\n========== PATIENT PROFILE ==========\n"
 
     prompt += f"Name: {profile.name}\n"
-
     prompt += f"Age: {profile.age}\n"
-
     prompt += f"Sex: {profile.sex}\n"
-
     prompt += f"Country: {profile.country}\n"
-
     prompt += f"Diabetes Type: {profile.diabetes_type}\n"
-
     prompt += f"Diagnosis Year: {profile.diagnosis_year or 'Unknown'}\n"
 
-    # NEW: allergies - placed prominently and phrased as a hard constraint,
-    # not just a data point, since missing this is a real safety failure.
+    # Allergies: ALWAYS included, never gated by relevance. A keyword miss
+    # here would be a safety gap, not a privacy win - the existing food/
+    # medicine safety rule below depends on this always being present.
     if profile.allergies:
         prompt += f"\n⚠️ ALLERGIES: {', '.join(profile.allergies)}\n"
         prompt += (
@@ -365,19 +451,20 @@ render Markdown tables, headings, or pipe characters. Follow these rules:
             "explicitly rather than silently avoiding it.\n\n"
         )
 
-    prompt += f"Insulin Type: {profile.insulin_type or 'Unknown'}\n"
-    
     prompt += f"Glucose Unit: {profile.glucose_unit}\n"
 
-    prompt += f"Current Medicines: {', '.join(profile.medications) if profile.medications else 'None'}\n"
+    if "medications" in relevant_categories:
+        prompt += f"Insulin Type: {profile.insulin_type or 'Unknown'}\n"
+        prompt += f"Current Medicines: {', '.join(profile.medications) if profile.medications else 'None'}\n"
 
-    prompt += f"Glucose Monitoring: {profile.glucose_monitoring or 'Unknown'}\n"
+    if "glucose" in relevant_categories:
+        prompt += f"Glucose Monitoring: {profile.glucose_monitoring or 'Unknown'}\n"
+        prompt += f"Previous Severe Hypoglycemia: {profile.severe_hypoglycemia or 'Unknown'}\n"
 
-    prompt += f"Previous Severe Hypoglycemia: {profile.severe_hypoglycemia or 'Unknown'}\n"
+    if "conditions" in relevant_categories:
+        prompt += f"Other Medical Conditions: {', '.join(profile.other_conditions) if profile.other_conditions else 'None'}\n"
 
-    prompt += f"Other Medical Conditions: {', '.join(profile.other_conditions) if profile.other_conditions else 'None'}\n"
-
-    if profile.hba1c is not None:
+    if "hba1c" in relevant_categories and profile.hba1c is not None:
         hba1c_line = f"HbA1c: {profile.hba1c}%"
         if profile.hba1c_date:
             hba1c_line += f" (measured {profile.hba1c_date})"
@@ -385,16 +472,13 @@ render Markdown tables, headings, or pipe characters. Follow these rules:
             hba1c_line += " (date of measurement unknown - treat as possibly outdated)"
         prompt += hba1c_line + "\n"
 
-    if profile.complications:
-
+    if "complications" in relevant_categories and profile.complications:
         prompt += "Diabetes Complications: "
-
         prompt += ", ".join(profile.complications)
-
         prompt += "\n"
 
     # BMI calculation
-    if profile.weight_kg and profile.height_cm and profile.height_cm > 0:
+    if "physical" in relevant_categories and profile.weight_kg and profile.height_cm and profile.height_cm > 0:
         height_m = profile.height_cm / 100
         bmi = profile.weight_kg / (height_m * height_m)
         bmi_rounded = round(bmi, 1)
@@ -413,23 +497,22 @@ render Markdown tables, headings, or pipe characters. Follow these rules:
         prompt += ("Factor BMI into diet and exercise advice, but raise weight "
                    "gently and without shaming. Focus on health, not appearance.\n")
 
-    # Smoking
-    if profile.smoking_status == "Current":
-        prompt += ("PATIENT SMOKES: Smoking sharply raises cardiovascular and "
-                   "kidney risk in diabetes. Where relevant, gently encourage "
-                   "quitting and mention local support exists - but do not lecture "
-                   "or repeat it in every answer.\n")
-    elif profile.smoking_status == "Former":
-        prompt += "Patient is a former smoker - acknowledge this positively if it comes up.\n"
+    if "physical" in relevant_categories:
+        if profile.smoking_status == "Current":
+            prompt += ("PATIENT SMOKES: Smoking sharply raises cardiovascular and "
+                       "kidney risk in diabetes. Where relevant, gently encourage "
+                       "quitting and mention local support exists - but do not lecture "
+                       "or repeat it in every answer.\n")
+        elif profile.smoking_status == "Former":
+            prompt += "Patient is a former smoker - acknowledge this positively if it comes up.\n"
 
     prompt += "=====================================\n"
-
 
     # -------------------------------------------------
     # Glucose history
     # -------------------------------------------------
 
-    if profile.glucose_summary:
+    if "glucose" in relevant_categories and profile.glucose_summary:
         prompt += f"""
 ========== GLUCOSE HISTORY ==========
 {profile.glucose_summary}
@@ -445,25 +528,26 @@ Use this data actively:
 =====================================
 """
 
-
     # -------------------------------------------------
     # Remembered Facts From Past Conversations
     # -------------------------------------------------
+    # ALWAYS included, never gated - these exist specifically so the model
+    # doesn't re-ask something the patient already answered. Filtering them
+    # by keyword would silently break that guarantee.
 
     if profile.known_facts:
-            prompt += "\n========== REMEMBERED FROM PAST CONVERSATIONS ==========\n"
-            for fact in profile.known_facts:
-                prompt += f"- {fact}\n"
-            prompt += (
-                "\nThese are things the patient told you in earlier sessions.\n"
-                "Treat them as patient-reported, not verified medical records.\n"
-                "Use them to avoid asking questions already answered.\n"
-                "If a remembered fact conflicts with the structured profile above, "
-                "trust the profile and ask the patient to clarify.\n"
-                "If a fact is old and may have changed, confirm it before relying on it.\n"
-            )
-
-            prompt += "=======================================================\n"
+        prompt += "\n========== REMEMBERED FROM PAST CONVERSATIONS ==========\n"
+        for fact in profile.known_facts:
+            prompt += f"- {fact}\n"
+        prompt += (
+            "\nThese are things the patient told you in earlier sessions.\n"
+            "Treat them as patient-reported, not verified medical records.\n"
+            "Use them to avoid asking questions already answered.\n"
+            "If a remembered fact conflicts with the structured profile above, "
+            "trust the profile and ask the patient to clarify.\n"
+            "If a fact is old and may have changed, confirm it before relying on it.\n"
+        )
+        prompt += "=======================================================\n"
 
     # -------------------------------------------------
     # Follow-up Question Policy
@@ -532,7 +616,6 @@ portion guidance meanwhile.
 Bad: a list of six questions before saying anything useful.
 Bad: "Mango is fine in moderation" - ignores the kidney disease on file.
 """
-
 
     prompt += """
 
@@ -625,7 +708,6 @@ Recommend contacting the treating doctor.
 
     diabetes_type = profile.diabetes_type.strip().lower()
     if diabetes_type == "type1":
-
         prompt += """
 
 TYPE 1 DIABETES
@@ -643,7 +725,6 @@ Focus on
 """
 
     elif diabetes_type == "type2":
-
         prompt += """
 
 TYPE 2 DIABETES
@@ -661,7 +742,6 @@ Focus on
 """
 
     elif diabetes_type == "gestational":
-
         prompt += """
 
 GESTATIONAL DIABETES
@@ -673,7 +753,6 @@ Avoid medication recommendations.
 """
 
     elif diabetes_type == "none":
-
         prompt += """
 
 EDUCATION MODE - NO DIABETES
@@ -700,10 +779,9 @@ remind them that person should consult their own doctor.
     # HbA1c
     # -------------------------------------------------
 
-    if profile.hba1c is not None:
+    if "hba1c" in relevant_categories and profile.hba1c is not None:
 
         if profile.hba1c >= 9:
-
             prompt += f"""
 
 IMPORTANT
@@ -715,7 +793,6 @@ Encourage early doctor review.
 """
 
         elif profile.hba1c >= 7:
-
             prompt += f"""
 
 HbA1c
@@ -732,11 +809,11 @@ Encourage continued diabetes management.
     # Other Conditions
     # -------------------------------------------------
 
-    conditions = " ".join(profile.other_conditions).lower()
+    if "conditions" in relevant_categories:
+        conditions = " ".join(profile.other_conditions).lower()
 
-    if "kidney" in conditions:
-
-        prompt += """
+        if "kidney" in conditions:
+            prompt += """
 
 Kidney disease detected.
 
@@ -748,9 +825,8 @@ Recommend nephrologist or renal dietitian when appropriate.
 
 """
 
-    if "heart" in conditions:
-
-        prompt += """
+        if "heart" in conditions:
+            prompt += """
 
 Heart disease detected.
 
@@ -760,9 +836,8 @@ Avoid strenuous exercise advice.
 
 """
 
-    if "blood pressure" in conditions:
-
-        prompt += """
+        if "blood pressure" in conditions:
+            prompt += """
 
 High blood pressure detected.
 
@@ -772,9 +847,8 @@ Encourage regular BP monitoring.
 
 """
 
-    if "pregnan" in conditions:
-
-        prompt += """
+        if "pregnan" in conditions:
+            prompt += """
 
 Pregnancy detected.
 
@@ -789,7 +863,6 @@ Encourage obstetric follow-up.
     # -------------------------------------------------
 
     if profile.response_style == "simple":
-
         prompt += """
 
 Use
@@ -803,7 +876,6 @@ Maximum four short paragraphs.
 """
 
     else:
-
         prompt += """
 
 Provide detailed explanations.
@@ -879,7 +951,6 @@ Example: ["Patient walks 30 minutes daily", "Patient uses a glucometer twice a w
 """
 
     try:
-
         response = client.messages.create(
             model="claude-haiku-4-5",
             max_tokens=800,
@@ -888,10 +959,8 @@ Example: ["Patient walks 30 minutes daily", "Patient uses a glucometer twice a w
         )
 
         raw = response.content[0].text.strip()
-
         raw = raw.removeprefix("```json").removeprefix("```").removesuffix("```").strip()
 
-        import json
         facts = json.loads(raw)
 
         if not isinstance(facts, list):
@@ -930,24 +999,30 @@ async def chat(request: ChatRequest):
     # Safety Check
     # ---------------------------------------------
 
-    safety = check_safety(request.message)
+    safety = check_safety(request.message, request.profile.glucose_unit)
 
     if safety["blocked"]:
         return {
             "response": safety["response"],
-            "safety_triggered": True
+            "safety_triggered": True,
+            "tier": "emergency"
         }
 
     # ---------------------------------------------
-    # Build Claude System Prompt
+    # Minimum-necessary context: classify which profile
+    # categories this message actually needs before building
+    # the system prompt.
     # ---------------------------------------------
 
-    system_prompt = build_system_prompt(request.profile)
+    relevant_categories = classify_relevant_categories(request.message)
 
-    print("=== PROFILE RECEIVED ===")
-    print(request.profile)
-    print("========================")
+    system_prompt = build_system_prompt(request.profile, relevant_categories)
 
+    # Log only what's needed to debug relevance decisions - not the
+    # full profile. The old `print(request.profile)` was writing PHI
+    # (allergies, HbA1c, medications) into Railway's server logs on
+    # every message; this replaces it with a non-identifying summary.
+    print(f"=== CATEGORIES INCLUDED: {sorted(relevant_categories) or ['none - base profile only']} ===")
 
     # Keep only the last few messages
 
@@ -1045,7 +1120,9 @@ async def chat(request: ChatRequest):
 
             "response": response.content[0].text,
 
-            "safety_triggered": False
+            "safety_triggered": False,
+
+            "tier": "education"
 
         }
 
@@ -1054,5 +1131,6 @@ async def chat(request: ChatRequest):
 
         return {
             "response": "Sorry, I could not process that right now. Please try again in a moment.",
-            "safety_triggered": False
+            "safety_triggered": False,
+            "tier": "education"
         }
