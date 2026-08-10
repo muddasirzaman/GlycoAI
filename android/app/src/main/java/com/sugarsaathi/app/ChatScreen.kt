@@ -639,10 +639,8 @@ fun WelcomeMessage(name: String) {
 @Composable
 fun MessageBubble(message: Message, onSpeak: ((String) -> Unit)? = null) {
     val isUser = message.role == "user"
+    val isEmergency = message.isEmergency
     val context = LocalContext.current
-    // LocalClipboard (the replacement) exposes a suspend API and needs a
-    // coroutine scope plus ClipEntry construction. Not worth the churn here;
-    // LocalClipboardManager still works. Migrate deliberately, not incidentally.
     @Suppress("DEPRECATION")
     val clipboard = LocalClipboardManager.current
     val copiedMsg = stringResource(R.string.copied_to_clipboard)
@@ -655,33 +653,65 @@ fun MessageBubble(message: Message, onSpeak: ((String) -> Unit)? = null) {
             modifier = Modifier.fillMaxWidth(if (isUser) 0.85f else 0.95f),
             horizontalAlignment = if (isUser) Alignment.End else Alignment.Start
         ) {
-            Box(
-                modifier = Modifier
-                    .background(
-                        color = if (isUser) TealGreen
-                        else MaterialTheme.colorScheme.surfaceVariant,
-                        shape = RoundedCornerShape(
-                            topStart = 16.dp,
-                            topEnd = 16.dp,
-                            bottomStart = if (isUser) 16.dp else 4.dp,
-                            bottomEnd = if (isUser) 4.dp else 16.dp
-                        )
-                    )
-                    .padding(14.dp)
-            ) {
-                SelectionContainer {
-                    if (isUser) {
+            if (isEmergency) {
+                // Emergency responses get their own card, not the normal chat
+                // bubble - a visually distinct treatment so the urgent
+                // instruction can't be mistaken for a routine answer, and
+                // isn't buried under normal bubble styling.
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFFDECEA)),
+                    shape = RoundedCornerShape(14.dp),
+                    border = BorderStroke(1.5.dp, Color(0xFFD32F2F)),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
                         Text(
-                            text = message.content,
-                            color = Color.White,
+                            stringResource(R.string.emergency_bubble_heading),
                             fontSize = 15.sp,
-                            lineHeight = 22.sp
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFFB71C1C)
                         )
-                    } else {
-                        MarkdownText(
-                            markdown = message.content,
-                            color = MaterialTheme.colorScheme.onSurface
+                        Spacer(Modifier.height(8.dp))
+                        SelectionContainer {
+                            Text(
+                                text = message.content,
+                                fontSize = 15.sp,
+                                lineHeight = 22.sp,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                    }
+                }
+            } else {
+                Box(
+                    modifier = Modifier
+                        .background(
+                            color = if (isUser) TealGreen
+                            else MaterialTheme.colorScheme.surfaceVariant,
+                            shape = RoundedCornerShape(
+                                topStart = 16.dp,
+                                topEnd = 16.dp,
+                                bottomStart = if (isUser) 16.dp else 4.dp,
+                                bottomEnd = if (isUser) 4.dp else 16.dp
+                            )
                         )
+                        .padding(14.dp)
+                ) {
+                    SelectionContainer {
+                        if (isUser) {
+                            Text(
+                                text = message.content,
+                                color = Color.White,
+                                fontSize = 15.sp,
+                                lineHeight = 22.sp
+                            )
+                        } else {
+                            MarkdownText(
+                                markdown = message.content,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
                     }
                 }
             }

@@ -1,5 +1,14 @@
 package com.sugarsaathi.app
 
+
+data class TipsRequest(
+    val profile: ProfileData
+)
+
+data class TipsResponse(
+    val tips: List<String>
+)
+
 @Suppress("PropertyName")
 data class ProfileData(
 
@@ -95,8 +104,13 @@ data class ChatResponse(
 
 data class Message(
     val role: String,
-    val content: String
-)
+    val content: String,
+    // Only ever set on assistant messages, from the backend's ChatResponse.tier.
+    // null for user messages and for older backend responses that omit it.
+    val tier: String? = null
+) {
+    val isEmergency: Boolean get() = tier == "emergency"
+}
 
 @Suppress("PropertyName")
 data class ExtractRequest(

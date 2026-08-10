@@ -285,6 +285,36 @@
     <string name="status_normal">نارمل</string>
     <string name="status_borderline">حد پر</string>
     <string name="status_high">زیادہ</string>
+    <string name="emergency_bubble_heading">⚠️ اسے فوری طبی توجہ کی ضرورت ہو سکتی ہے</string>
+    <string name="emergency_title">ہنگامی صورتحال اور حفاظت</string>
+    <string name="emergency_call_button">ایمرجنسی سروس کو کال کریں (1122)</string>
+    <string name="emergency_intro">اگر آپ یا کسی ذیابیطس کے مریض میں ان میں سے کوئی علامت ظاہر ہو تو انتظار نہ کریں — فوری طبی مدد حاصل کریں۔</string>
+    <string name="emergency_when_heading">فوری مدد کب لینی چاہیے</string>
+
+    <string name="em_low_title">بہت کم بلڈ شوگر</string>
+    <string name="em_low_body">کپکپی، پسینہ، الجھن، یا معمول سے کہیں کم ریڈنگ۔ اگر مریض ہوش میں ہے تو فوراً کوئی میٹھی چیز دیں۔ اگر نیند آ رہی ہو یا بے ہوش ہو تو کچھ نہ کھلائیں — فوراً مدد طلب کریں۔</string>
+
+    <string name="em_high_title">بہت زیادہ بلڈ شوگر</string>
+    <string name="em_high_body">شدید پیاس، بار بار پیشاب، الٹی، سانس سے پھل جیسی بو، یا تیز گہری سانسیں۔ یہ ایک سنگین پیچیدگی کی علامت ہو سکتی ہیں جسے فوری علاج کی ضرورت ہے۔</string>
+
+    <string name="em_confusion_title">الجھن یا غیر معمولی رویہ</string>
+    <string name="em_confusion_body">اچانک الجھن، لڑکھڑاتی بولی، یا "خود جیسا نہ لگنا" بلڈ شوگر کے خطرناک حد تک کم یا زیادہ ہونے کی علامت ہو سکتا ہے۔</string>
+
+    <string name="em_unconscious_title">بے ہوشی</string>
+    <string name="em_unconscious_body">اگر کوئی بے ہوش ہو جائے یا جاگ نہ سکے تو فوراً ایمرجنسی سروس کو کال کریں۔ منہ سے کچھ نہ دیں۔</string>
+
+    <string name="em_breathing_title">سانس لینے میں دشواری</string>
+    <string name="em_breathing_body">سانس لینے میں دشواری یا بے ہوش ہونے کا احساس فوری ایمرجنسی توجہ کا متقاضی ہے۔</string>
+
+    <string name="em_weakness_title">شدید کمزوری</string>
+    <string name="em_weakness_body">اچانک کھڑے ہونے، چلنے، یا معمول کے مطابق کام کرنے سے قاصر ہونا ایک انتباہی علامت ہے جسے نظر انداز نہیں کرنا چاہیے۔</string>
+
+    <string name="em_other_title">دیگر سنگین علامات</string>
+    <string name="em_other_body">سینے میں درد، بار بار الٹی، تیز بخار، یا زخم جو ٹھیک نہ ہو رہا ہو، یہ سب ذیابیطس کے مریض کے لیے سنگین ہو سکتے ہیں۔</string>
+
+    <string name="emergency_disclaimer">یہ اسکرین صرف عمومی حفاظتی معلومات فراہم کرتی ہے۔ یہ ایمرجنسی کی تشخیص نہیں کر سکتی اور پیشہ ور طبی رائے کا متبادل نہیں ہے۔ شک کی صورت میں، ہمیشہ فوری طبی مدد حاصل کریں۔</string>
+
+    <string name="tab_emergency">ہنگامی</string>
 
     <!-- Glucose suggestions -->
     <string name="sugg_severe_low_title">⚠️ شوگر بہت کم ہے</string>

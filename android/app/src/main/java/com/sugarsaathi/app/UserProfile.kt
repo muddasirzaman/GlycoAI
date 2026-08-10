@@ -43,17 +43,9 @@ object ProfileKeys {
     val CONSENT_ACCEPTED = booleanPreferencesKey("consent_accepted")
     val CONSENT_TIMESTAMP = longPreferencesKey("consent_timestamp")
 
-    // NEW: allergies - sent to the chatbot, since a food/med answer that
-    // ignores an allergy is a real safety failure, not a nicety.
     val ALLERGIES = stringPreferencesKey("allergies")
-
-    // NEW: when HbA1c was last measured. Sent to the chatbot alongside the
-    // value so it can judge whether the number is stale.
     val HBA1C_DATE = stringPreferencesKey("hba1c_date")
 
-    // NEW: doctor info + emergency contact. Profile-only - deliberately never
-    // mapped into ProfileData / sent to the backend. A food question has no
-    // business carrying someone's doctor's phone number.
     val DOCTOR_NAME = stringPreferencesKey("doctor_name")
     val DOCTOR_PHONE = stringPreferencesKey("doctor_phone")
     val EMERGENCY_CONTACT_NAME = stringPreferencesKey("emergency_contact_name")
@@ -96,7 +88,6 @@ data class UserProfileData(
     val consentAccepted: Boolean = false,
     val consentTimestamp: Long = 0L,
 
-    // NEW
     val allergies: List<String> = emptyList(),
     val hba1cDate: String? = null,
     val doctorName: String = "",
@@ -151,7 +142,6 @@ class ProfileRepository(private val context: Context) {
             consentAccepted = prefs[ProfileKeys.CONSENT_ACCEPTED] ?: false,
             consentTimestamp = prefs[ProfileKeys.CONSENT_TIMESTAMP] ?: 0L,
 
-            // NEW
             allergies = (prefs[ProfileKeys.ALLERGIES] ?: "")
                 .split("|||").filter { it.isNotEmpty() },
             hba1cDate = prefs[ProfileKeys.HBA1C_DATE]?.ifEmpty { null },
@@ -201,7 +191,6 @@ class ProfileRepository(private val context: Context) {
                     else System.currentTimeMillis()
             }
 
-            // NEW
             prefs[ProfileKeys.ALLERGIES] = profile.allergies.joinToString("|||")
             prefs[ProfileKeys.HBA1C_DATE] = profile.hba1cDate ?: ""
             prefs[ProfileKeys.DOCTOR_NAME] = profile.doctorName
@@ -223,5 +212,10 @@ class ProfileRepository(private val context: Context) {
         context.dataStore.edit { prefs ->
             prefs[ProfileKeys.KNOWN_FACTS] = facts.joinToString("|||")
         }
+    }
+
+    /** Wipes every stored key. Used only by the "Delete my data" flow. */
+    suspend fun clearProfile() {
+        context.dataStore.edit { prefs -> prefs.clear() }
     }
 }

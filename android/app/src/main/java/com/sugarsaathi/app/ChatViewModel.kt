@@ -125,7 +125,11 @@ class ChatViewModel : ViewModel() {
                     document_name = documentName
                 )
                 val response = NetworkModule.apiService.sendMessage(request)
-                val aiMessage = Message(role = "assistant", content = response.response)
+                val aiMessage = Message(
+                    role = "assistant",
+                    content = response.response,
+                    tier = response.tier
+                )
                 val updatedMessages = currentMessages + aiMessage
                 lastFailedRetry = null
                 _uiState.value = _uiState.value.copy(

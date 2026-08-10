@@ -72,4 +72,9 @@ class ChatHistoryRepository(private val context: Context) {
         val sdf = SimpleDateFormat("dd MMM yyyy, hh:mm a", Locale.getDefault())
         return sdf.format(Date(timestamp))
     }
+
+    /** Wipes every saved chat session file. Used only by the "Delete my data" flow. */
+    fun deleteAllSessions() {
+        historyDir.listFiles()?.forEach { it.delete() }
+    }
 }

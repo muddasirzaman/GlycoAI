@@ -87,6 +87,7 @@ class MainActivity : ComponentActivity() {
                 val chatViewModel: ChatViewModel = viewModel()
                 val glucoseViewModel: GlucoseViewModel = viewModel()
                 var showChatHistory by remember { mutableStateOf(false) }
+                var showPrivacy by remember { mutableStateOf(false) }
                 chatVM = chatViewModel
 
                 LaunchedEffect(Unit) {
@@ -167,6 +168,19 @@ class MainActivity : ComponentActivity() {
                         )
                     }
 
+                    showPrivacy -> {
+                        PrivacyScreen(
+                            onBack = { showPrivacy = false },
+                            onAccountDeleted = {
+                                showPrivacy = false
+                                isSignedIn = false
+                                selectedTab = 0
+                                showChatHistory = false
+                                selectedSession = null
+                            }
+                        )
+                    }
+
                     // The main tabbed interface
                     else -> {
                         MainTabScreen(
@@ -187,7 +201,8 @@ class MainActivity : ComponentActivity() {
                             onAddReading = { showAddReading = true },
                             // onOpenSession removed - MainTabScreen never used it.
                             onChatHistory = { showChatHistory = true },
-                            onEditProfile = { showOnboarding = true }
+                            onEditProfile = { showOnboarding = true },
+                            onPrivacy = { showPrivacy = true }
                         )
                     }
                 }

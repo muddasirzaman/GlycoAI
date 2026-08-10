@@ -19,6 +19,12 @@ interface ApiService {
     @POST("api/v1/extract-facts")
     suspend fun extractFacts(@Body request: ExtractRequest): ExtractResponse
 
+    // FIX: this was missing, which is what broke TipsViewModel.kt's
+    // getTips() call - the interface declared sendMessage and
+    // extractFacts but never getTips itself.
+    @POST("api/v1/tips")
+    suspend fun getTips(@Body request: TipsRequest): TipsResponse
+
 }
 
 /**

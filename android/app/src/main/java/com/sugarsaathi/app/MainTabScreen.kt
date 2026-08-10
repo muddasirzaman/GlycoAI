@@ -6,6 +6,7 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -21,6 +22,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.ui.text.font.FontWeight
 import kotlinx.coroutines.launch
+import androidx.compose.material.icons.filled.Warning
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -36,7 +38,8 @@ fun MainTabScreen(
     // onOpenSession removed: ChatHistoryScreen owns opening a session, and it
     // is reached through onChatHistory. Nothing here ever called it.
     onChatHistory: () -> Unit,
-    onEditProfile: () -> Unit
+    onEditProfile: () -> Unit,
+    onPrivacy: () -> Unit
 ) {
     Scaffold(
         // FIX: ALL bottom inset handling lives here, in exactly one place.
@@ -99,6 +102,18 @@ fun MainTabScreen(
                         indicatorColor = Color(0xFFE1F5EE)
                     )
                 )
+
+                NavigationBarItem(
+                    selected = selectedTab == 4,
+                    onClick = { onTabSelected(4) },
+                    icon = { Icon(Icons.Default.Warning, contentDescription = "Emergency") },
+                    label = { Text(stringResource(R.string.tab_emergency)) },
+                    colors = NavigationBarItemDefaults.colors(
+                        selectedIconColor = Color(0xFFD32F2F),
+                        selectedTextColor = Color(0xFFD32F2F),
+                        indicatorColor = Color(0xFFFDECEA)
+                    )
+                )
             }
         }
     ) { padding ->
@@ -124,9 +139,11 @@ fun MainTabScreen(
                 3 -> ProfileTabPlaceholder(
                     profile = profile,
                     onEditProfile = onEditProfile,
+                    onPrivacy = onPrivacy,
                     authViewModel = authViewModel,
                     onSignedOut = onSignedOut
                 )
+                4 -> EmergencyScreen()
             }
         }
     }
@@ -136,6 +153,7 @@ fun MainTabScreen(
 fun ProfileTabPlaceholder(
     profile: UserProfileData,
     onEditProfile: () -> Unit,
+    onPrivacy: () -> Unit,
     authViewModel: AuthViewModel,
     onSignedOut: () -> Unit
 ) {
@@ -208,6 +226,17 @@ fun ProfileTabPlaceholder(
             onClick = onEditProfile,
             colors = ButtonDefaults.buttonColors(containerColor = TealGreen)
         ) { Text(stringResource(R.string.edit_my_information)) }
+
+        Spacer(Modifier.height(8.dp))
+        OutlinedButton(
+            onClick = onPrivacy,
+            colors = ButtonDefaults.outlinedButtonColors(contentColor = TealGreen),
+            border = androidx.compose.foundation.BorderStroke(1.dp, TealGreen)
+        ) {
+            Icon(Icons.Default.Lock, contentDescription = null, modifier = Modifier.size(18.dp))
+            Spacer(Modifier.width(8.dp))
+            Text("Privacy & My Data")
+        }
 
         Spacer(Modifier.weight(1f))
 

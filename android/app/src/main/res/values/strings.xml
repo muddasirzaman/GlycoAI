@@ -287,6 +287,36 @@
     <string name="status_borderline">Borderline</string>
     <string name="status_high">High</string>
 
+    <string name="tab_emergency">Emergency</string>
+    <string name="emergency_bubble_heading">⚠️ This may require urgent medical attention</string>
+    <string name="emergency_title">Emergency &amp; Safety</string>
+    <string name="emergency_call_button">Call Emergency Services (1122)</string>
+    <string name="emergency_intro">If you or someone with diabetes shows any of these signs, do not wait — seek urgent medical help right away.</string>
+    <string name="emergency_when_heading">When to seek urgent help</string>
+
+    <string name="em_low_title">Very Low Blood Sugar</string>
+    <string name="em_low_body">Shaking, sweating, confusion, or a reading well below normal. If conscious, give something sweet right away. Never give food or drink if drowsy or unconscious — call for help instead.</string>
+
+    <string name="em_high_title">Very High Blood Sugar</string>
+    <string name="em_high_body">Extreme thirst, frequent urination, vomiting, fruity-smelling breath, or fast deep breathing. These can be signs of a serious complication needing urgent care.</string>
+
+    <string name="em_confusion_title">Confusion or Unusual Behavior</string>
+    <string name="em_confusion_body">Sudden confusion, slurred speech, or acting "not like themselves" can be a sign of dangerously low or high blood sugar.</string>
+
+    <string name="em_unconscious_title">Loss of Consciousness</string>
+    <string name="em_unconscious_body">If someone faints or cannot be woken up, call emergency services immediately. Do not give anything by mouth.</string>
+
+    <string name="em_breathing_title">Difficulty Breathing</string>
+    <string name="em_breathing_body">Trouble breathing, gasping, or feeling like you might pass out needs immediate emergency attention.</string>
+
+    <string name="em_weakness_title">Severe Weakness</string>
+    <string name="em_weakness_body">Sudden inability to stand, walk, or function normally is a warning sign that should not be ignored.</string>
+
+    <string name="em_other_title">Other Serious Signs</string>
+    <string name="em_other_body">Chest pain, repeated vomiting, high fever, or a wound that is not healing can all be serious for someone with diabetes.</string>
+
+    <string name="emergency_disclaimer">This screen provides general safety information only. It cannot diagnose an emergency and does not replace professional medical judgment. When in doubt, always seek care immediately.</string>
+
     <!-- Glucose suggestions -->
     <string name="sugg_severe_low_title">⚠️ Very low blood sugar</string>
     <string name="sugg_severe_low">Your reading is dangerously low. Treat it now with fast-acting sugar — juice, regular soda, or glucose tablets. Tell someone nearby. Recheck in 15 minutes. If you feel confused, drowsy, or do not improve, seek emergency care immediately (1122).</string>

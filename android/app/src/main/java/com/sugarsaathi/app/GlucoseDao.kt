@@ -30,4 +30,8 @@ interface GlucoseDao {
     @Suppress("unused")
     @Query("SELECT * FROM glucose_readings WHERE timestamp >= :since ORDER BY timestamp DESC")
     fun getReadingsSince(since: Long): Flow<List<GlucoseReading>>
+
+    // Wipes every stored reading. Used only by the "Delete my data" flow.
+    @Query("DELETE FROM glucose_readings")
+    suspend fun deleteAll()
 }
