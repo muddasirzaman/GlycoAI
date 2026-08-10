@@ -2,144 +2,21 @@ import sys
 sys.stdout.reconfigure(encoding="utf-8")
 
 import os
-import re
-import json
-import time
-from collections import defaultdict, deque
-
-from fastapi import FastAPI, Depends, Header, HTTPException
+from fastapi import FastAPI
 from pydantic import BaseModel, Field
 from anthropic import Anthropic
 from dotenv import load_dotenv
-
-import firebase_admin
-from firebase_admin import credentials, auth as fb_auth
 
 load_dotenv()
 
 app = FastAPI(
     title="GlycoAI API",
-    version="1.1"
+    version="1.0"
 )
 
 client = Anthropic(
     api_key=os.getenv("ANTHROPIC_API_KEY")
 )
-
-
-# =====================================================
-# Authentication
-# =====================================================
-#
-# REQUIRE_AUTH exists for staged rollout. Deploy this backend with it OFF,
-# ship the app update that sends the token, confirm traffic is authenticated,
-# THEN set it to true. Turning it on first breaks every installed copy.
-
-REQUIRE_AUTH = os.getenv("REQUIRE_AUTH", "false").strip().lower() == "true"
-
-_firebase_ready = False
-_service_account = os.getenv("FIREBASE_SERVICE_ACCOUNT")
-
-if _service_account:
-    try:
-        _cred = credentials.Certificate(json.loads(_service_account))
-        firebase_admin.initialize_app(_cred)
-        _firebase_ready = True
-        print(" Firebase Admin initialized")
-    except Exception as _e:
-        print(" FIREBASE INIT FAILED:", _e)
-else:
-    print(" FIREBASE_SERVICE_ACCOUNT not set - auth cannot be enforced")
-
-if REQUIRE_AUTH and not _firebase_ready:
-    print(" WARNING: REQUIRE_AUTH is on but Firebase is not ready. "
-          "All requests will be rejected.")
-elif not REQUIRE_AUTH:
-    print(" WARNING: REQUIRE_AUTH is off - this API is OPEN TO THE PUBLIC")
-
-
-async def current_uid(authorization: str | None = Header(default=None)) -> str:
-    """Verify the Firebase ID token and return the caller's UID."""
-
-    if not REQUIRE_AUTH:
-        return "anonymous"
-
-    if not _firebase_ready:
-        raise HTTPException(status_code=503, detail="Authentication unavailable")
-
-    if not authorization or not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="Sign in required")
-
-    token = authorization.split(" ", 1)[1].strip()
-
-    try:
-        decoded = fb_auth.verify_id_token(token)
-    except Exception:
-        # Deliberately vague: never tell a caller why a token failed.
-        raise HTTPException(status_code=401, detail="Session expired")
-
-    uid = decoded.get("uid")
-    if not uid:
-        raise HTTPException(status_code=401, detail="Session expired")
-    return uid
-
-
-# =====================================================
-# Rate limiting
-# =====================================================
-#
-# In-memory sliding window, keyed by Firebase UID. Good enough for a single
-# Railway instance. If you ever scale to more than one, move this to Redis -
-# each instance keeps its own counters, so the effective limit multiplies.
-
-RATE_PER_MIN = int(os.getenv("RATE_PER_MIN", "20"))
-RATE_PER_DAY = int(os.getenv("RATE_PER_DAY", "300"))
-
-_hits: dict[str, deque] = defaultdict(deque)
-
-# Roughly 7 MB of base64 - large enough for a phone photo, small enough that
-# nobody can use the endpoint as free storage or run up the bill.
-MAX_ATTACHMENT_CHARS = 7_000_000
-
-
-def enforce_rate_limit(uid: str) -> None:
-    if not REQUIRE_AUTH:
-        return
-
-    now = time.time()
-    window = _hits[uid]
-
-    while window and now - window[0] > 86_400:
-        window.popleft()
-
-    recent = sum(1 for t in window if now - t < 60)
-    if recent >= RATE_PER_MIN:
-        raise HTTPException(
-            status_code=429,
-            detail="Too many messages just now. Please wait a moment."
-        )
-
-    if len(window) >= RATE_PER_DAY:
-        raise HTTPException(
-            status_code=429,
-            detail="Daily limit reached. Please try again tomorrow."
-        )
-
-    window.append(now)
-
-    # Keep the dict from growing without bound on a long-lived process.
-    if len(_hits) > 10_000:
-        for k in [k for k, v in _hits.items() if not v]:
-            _hits.pop(k, None)
-
-
-def check_attachment_size(request) -> None:
-    for blob in (request.image_data, request.document_data):
-        if blob and len(blob) > MAX_ATTACHMENT_CHARS:
-            raise HTTPException(
-                status_code=413,
-                detail="That file is too large. Please try a smaller one."
-            )
 
 
 print("===================================")
@@ -155,49 +32,31 @@ print("===================================")
 class ProfileData(BaseModel):
 
     name: str
-
     age: int
-
     sex: str = "Unknown"
-
     country: str = "Pakistan"
-
     diabetes_type: str = "unknown"
-
     diagnosis_year: str | None = None
-
     insulin_type: str | None = None
-
     medications: list[str] = Field(default_factory=list)
-
     glucose_monitoring: str | None = None
-
     severe_hypoglycemia: str | None = None
-
     other_conditions: list[str] = Field(default_factory=list)
-
     hba1c: float | None = None
-
     complications: list[str] = Field(default_factory=list)
-
     language: str = "en"
-
     response_style: str = "simple"
-
     glucose_unit: str = "mg/dL"
-
     known_facts: list[str] = Field(default_factory=list)
-
     weight_kg: float | None = None
-
     height_cm: float | None = None
-
     smoking_status: str = ""
-
     purpose: str = "patient"
-
     glucose_summary: str | None = None
 
+    # NEW
+    allergies: list[str] = Field(default_factory=list)
+    hba1c_date: str | None = None
 
 # =====================================================
 # Incoming Chat Request
@@ -227,110 +86,108 @@ class ChatRequest(BaseModel):
 # =====================================================
 
 EMERGENCY_WORDS = [
+
     "unconscious",
+
     "passed out",
+
     "not breathing",
+
     "can't breathe",
-    "cant breathe",
+
     "difficulty breathing",
+
     "seizure",
-    "fitting",
+
     "stroke",
+
     "heart attack",
+
     "chest pain",
+
     "collapse",
-    "collapsed",
-    # Roman Urdu
+
     "behosh",
-    "be hosh",
-    "behoshi",
-    "saans nahi",
-    "dora par",
-    "gir gaya",
-    "gir gayi",
+
+    "sugar 30",
+
+    "sugar 40",
+
+    "sugar 50",
+
+    "glucose 30",
+
+    "glucose 40",
+
+    "glucose 50"
+
 ]
 
 DOSING_WORDS = [
+
     "how many units",
+
     "how much insulin",
+
     "increase insulin",
+
     "reduce insulin",
+
     "insulin dose",
+
     "change insulin",
-    "adjust insulin",
-    "stop taking",
-    "should i stop",
-    "double my dose",
-    "skip my dose",
-    # Roman Urdu
+
     "dose bata",
+
     "dose batao",
+
     "kitni insulin",
-    "insulin kitni",
-    "kitni units",
+
+    "insulin kitni"
+
 ]
 
-# Glucose values that are genuinely critical, matched as whole numbers so
-# "sugar 300" is never mistaken for "sugar 30".
-GLUCOSE_PATTERN = re.compile(
-    r"(?:sugar|glucose|bsl|reading|sheeta|shugar)\D{0,12}(\d{1,4})(?!\d)(?:\.\d+)?",
-    re.IGNORECASE,
-)
 
-EMERGENCY_RESPONSE = (
-    "This may be a medical emergency. Please call your local emergency "
-    "services (1122 in Pakistan) or go to the nearest hospital immediately.\n\n"
-    "If the person is conscious and able to swallow, and their sugar is low, "
-    "give them something sweet right away - juice, regular soft drink, or "
-    "sugar dissolved in water. Do not give anything by mouth if they are "
-    "drowsy or unconscious."
-)
-
-DOSING_RESPONSE = (
-    "I cannot recommend or calculate insulin or medication doses - that has to "
-    "come from your own doctor, because it depends on tests and details only "
-    "they can assess.\n\n"
-    "Please follow the instructions you were given, and contact your "
-    "healthcare provider if you think something needs to change. If you are "
-    "unwell right now and unsure what to do, treat it as urgent and seek care."
-)
-
-
-def check_safety(message: str, glucose_unit: str = "mg/dL"):
-    """Hard safety gate that runs before the model sees anything."""
+def check_safety(message: str):
 
     message_lower = message.lower()
 
     for word in EMERGENCY_WORDS:
+
         if word in message_lower:
-            return {"blocked": True, "response": EMERGENCY_RESPONSE}
 
-    # Numeric glucose check, unit-aware and boundary-safe.
-    for match in GLUCOSE_PATTERN.finditer(message_lower):
-        try:
-            value = int(match.group(1))
-        except (TypeError, ValueError):
-            continue
+            return {
 
-        if glucose_unit == "mmol/L":
-            # mmol/L: below 3 or above 25 warrants urgent care
-            if value <= 3 or value >= 25:
-                return {"blocked": True, "response": EMERGENCY_RESPONSE}
-        else:
-            # mg/dL: a 1-2 digit number here is almost always mmol/L or a typo,
-            # so only act on clearly critical mg/dL values.
-            # Upper bound is 400 to match the app's own "very high" threshold in
-            # GlucoseSuggestions.kt - the Tracker tab and the chat must not
-            # disagree about whether the same reading is an emergency.
-            if 20 <= value <= 54 or value >= 400:
-                return {"blocked": True, "response": EMERGENCY_RESPONSE}
+                "blocked": True,
+
+                "response":
+                    "🚨 This may be a medical emergency. "
+                    "Please call your local emergency services "
+                    "(1122 in Pakistan) or go to the nearest hospital immediately."
+
+            }
 
     for word in DOSING_WORDS:
+
         if word in message_lower:
-            return {"blocked": True, "response": DOSING_RESPONSE}
 
-    return {"blocked": False, "response": None}
+            return {
 
+                "blocked": True,
+
+                "response":
+                    "I cannot recommend or calculate insulin or medication doses. "
+                    "Please follow your doctor's instructions or contact your healthcare provider."
+
+            }
+
+    return {
+
+        "blocked": False,
+
+        "response": None
+
+    }
 
 # =====================================================
 # System Prompt Builder
@@ -435,10 +292,6 @@ meal planning, recognizing hypoglycemia and hyperglycemia, and when to seek
 emergency care.
 Name trusted patient-education sources (ADA, WHO, IDF, NHS), not research papers.
 Emphasize supporting - not replacing - the patient's own doctor.
-
-IMPORTANT: the profile below describes the PERSON THEY CARE FOR. Use it exactly
-as you would for a patient. Do not fall back to generic advice on the grounds
-that you are talking to a caregiver - you have this person's details, so use them.
 """
 
     # -------------------------------------------------
@@ -471,8 +324,8 @@ always better than a fabricated link.
 
 OUTPUT FORMATTING
 
-The "message" field is shown as plain text inside a mobile chat bubble - it does
-NOT render Markdown tables, headings, or pipe characters. Follow these rules:
+This reply is shown as plain text inside a mobile chat bubble - it does NOT
+render Markdown tables, headings, or pipe characters. Follow these rules:
 
 - Never use a Markdown table. No "|" characters, no "|---|---|" separator rows.
 - Never use "#" or "##" headings. To introduce a new point, just start a new
@@ -501,8 +354,19 @@ NOT render Markdown tables, headings, or pipe characters. Follow these rules:
 
     prompt += f"Diagnosis Year: {profile.diagnosis_year or 'Unknown'}\n"
 
-    prompt += f"Insulin Type: {profile.insulin_type or 'Unknown'}\n"
+    # NEW: allergies - placed prominently and phrased as a hard constraint,
+    # not just a data point, since missing this is a real safety failure.
+    if profile.allergies:
+        prompt += f"\n⚠️ ALLERGIES: {', '.join(profile.allergies)}\n"
+        prompt += (
+            "CRITICAL: Never recommend any food, ingredient, or medicine that "
+            "matches or contains one of these allergens. If a food question "
+            "touches on an ingredient close to an allergy, name the conflict "
+            "explicitly rather than silently avoiding it.\n\n"
+        )
 
+    prompt += f"Insulin Type: {profile.insulin_type or 'Unknown'}\n"
+    
     prompt += f"Glucose Unit: {profile.glucose_unit}\n"
 
     prompt += f"Current Medicines: {', '.join(profile.medications) if profile.medications else 'None'}\n"
@@ -511,16 +375,23 @@ NOT render Markdown tables, headings, or pipe characters. Follow these rules:
 
     prompt += f"Previous Severe Hypoglycemia: {profile.severe_hypoglycemia or 'Unknown'}\n"
 
-    # Conditions and complications come from one onboarding screen, so treat
-    # them as a single combined list everywhere.
-    all_conditions = [c for c in (profile.other_conditions + profile.complications) if c]
-
-    prompt += f"Other Medical Conditions: {', '.join(all_conditions) if all_conditions else 'None'}\n"
+    prompt += f"Other Medical Conditions: {', '.join(profile.other_conditions) if profile.other_conditions else 'None'}\n"
 
     if profile.hba1c is not None:
-        prompt += f"HbA1c: {profile.hba1c}%\n"
-    else:
-        prompt += "HbA1c: Not recorded\n"
+        hba1c_line = f"HbA1c: {profile.hba1c}%"
+        if profile.hba1c_date:
+            hba1c_line += f" (measured {profile.hba1c_date})"
+        else:
+            hba1c_line += " (date of measurement unknown - treat as possibly outdated)"
+        prompt += hba1c_line + "\n"
+
+    if profile.complications:
+
+        prompt += "Diabetes Complications: "
+
+        prompt += ", ".join(profile.complications)
+
+        prompt += "\n"
 
     # BMI calculation
     if profile.weight_kg and profile.height_cm and profile.height_cm > 0:
@@ -553,6 +424,7 @@ NOT render Markdown tables, headings, or pipe characters. Follow these rules:
 
     prompt += "=====================================\n"
 
+
     # -------------------------------------------------
     # Glucose history
     # -------------------------------------------------
@@ -572,205 +444,179 @@ Use this data actively:
   and encourage doctor review.
 =====================================
 """
-    else:
-        prompt += """
-========== GLUCOSE HISTORY ==========
-No glucose readings have been recorded in the app yet.
-You may ask for a recent reading when it would change your advice.
-=====================================
-"""
+
 
     # -------------------------------------------------
     # Remembered Facts From Past Conversations
     # -------------------------------------------------
 
     if profile.known_facts:
-        prompt += "\n========== REMEMBERED FROM PAST CONVERSATIONS ==========\n"
-        for fact in profile.known_facts:
-            prompt += f"- {fact}\n"
-        prompt += (
-            "\nThese are things the patient told you in earlier sessions.\n"
-            "Treat them as patient-reported, not verified medical records.\n"
-            "Use them to avoid asking questions already answered.\n"
-            "If a remembered fact conflicts with the structured profile above, "
-            "trust the profile and ask the patient to clarify.\n"
-            "If a fact is old and may have changed, confirm it before relying on it.\n"
-        )
-        prompt += "=======================================================\n"
+            prompt += "\n========== REMEMBERED FROM PAST CONVERSATIONS ==========\n"
+            for fact in profile.known_facts:
+                prompt += f"- {fact}\n"
+            prompt += (
+                "\nThese are things the patient told you in earlier sessions.\n"
+                "Treat them as patient-reported, not verified medical records.\n"
+                "Use them to avoid asking questions already answered.\n"
+                "If a remembered fact conflicts with the structured profile above, "
+                "trust the profile and ask the patient to clarify.\n"
+                "If a fact is old and may have changed, confirm it before relying on it.\n"
+            )
+
+            prompt += "=======================================================\n"
 
     # -------------------------------------------------
-    # RESPONSE FORMAT  (structured output)
+    # Follow-up Question Policy
     # -------------------------------------------------
 
     prompt += """
 
-========== RESPONSE FORMAT ==========
+CLINICAL REASONING BEFORE ANSWERING
 
-Return ONLY a JSON object. No preamble, no explanation, no markdown code fences.
+Before giving any personalized recommendation, silently assess:
 
-{
-  "tier": "emergency" | "prescribing" | "education" | "personal",
-  "needs_context": true or false,
-  "message": "what to say to the user",
-  "quick_replies": ["short option", "short option"]
-}
+STEP 1 - What would change my answer here?
+List the clinical factors that genuinely affect this specific question.
 
-FIELD RULES
+STEP 2 - Which do I already know?
+Check the patient profile, glucose history, remembered facts, and this
+conversation. Anything already known must NEVER be asked again.
 
-"tier" - classify the user's question:
-  emergency    - symptoms or readings suggesting urgent danger
-  prescribing  - asking what dose to take, or whether to start/stop/change a medicine
-  education    - general knowledge, not about this person's own management
-  personal     - advice about this person's own diet, exercise, or daily management
+STEP 3 - Is anything missing that would change my recommendation?
+If no - answer now, using the profile explicitly.
+If yes - ask about it BEFORE answering.
 
-"needs_context" - true ONLY when you are asking a question instead of advising.
+ASKING FOLLOW-UP QUESTIONS
 
-"message" - the text shown in the chat bubble.
+Default to asking when the answer genuinely depends on something you do not know.
+Do not guess, and do not give generic advice as a substitute for asking.
 
-"quick_replies" - tappable buttons sent as the user's next message.
-  Maximum 4. Each under 30 characters.
-  When needs_context is true: likely ANSWERS to the question you just asked,
-  and ALWAYS include one meaning "I don't know".
-  When needs_context is false: 2 or 3 natural follow-up questions they may
-  want to ask next, or an empty list if none fit.
-  Write them in the same language as "message".
+Ask ONE question at a time, conversationally. Never send a list of questions.
+Wait for the answer before asking the next.
 
-========== HOW TO DECIDE ==========
+Ask only what would genuinely change your advice. Two or three questions is the
+normal maximum; if you want a fourth, answer with what you have and state what
+it depends on.
 
-TIER: EMERGENCY
-Answer immediately and fully. needs_context MUST be false.
-NEVER ask a clarifying question first. Tell them what to do right now and to
-seek urgent care. Safety before information gathering, always.
+Acknowledge what you already know when you ask, so the patient feels heard:
+"I can see you are on Glucophage - what was your reading before this meal?"
 
-TIER: PRESCRIBING
-needs_context MUST be false. Never give a dose, never suggest starting,
-stopping, or changing a medicine - no matter how much detail they provide.
-More context NEVER unlocks dose advice. Explain warmly why you cannot, and
-direct them to their doctor.
+If the patient does not answer or says they do not know, give the safest general
+guidance and clearly state what it would depend on. Never stall.
 
-TIER: EDUCATION
-Answer directly. needs_context is false. Nothing personal is required to
-explain what HbA1c is or how insulin works.
+WHAT NOT TO ASK
 
-TIER: PERSONAL - APPLY THE GATE
-Work through this silently before writing anything:
+Never ask their diabetes type, medications, conditions, age, or recent glucose
+readings - all of this is already above. Asking again looks careless.
 
-STEP 1 - What would genuinely change my recommendation here?
-STEP 2 - Which of those do I already know, from the profile, glucose history,
-         remembered facts, or earlier in this conversation?
-STEP 3 - Is anything still missing that would MATERIALLY change my advice?
+EMERGENCY OVERRIDE
 
-If nothing material is missing:
-  needs_context = false. Answer fully, using the profile explicitly by name.
+If their answers suggest an emergency - very low or very high glucose with
+symptoms, confusion, vomiting, chest pain, breathing difficulty, or loss of
+consciousness - STOP questioning immediately and tell them to seek urgent
+medical care or call 1122. Safety before information gathering, always.
 
-If something material IS missing:
-  needs_context = true.
-  Ask exactly ONE question - the single most important one.
-  Acknowledge what you already know, so they feel heard.
-  DO NOT give the recommendation in the same message. No portion sizes, no
-  numbers, no "but generally speaking...". Withholding is the entire point -
-  a recommendation plus a question is the failure this rule exists to prevent.
-  A short neutral framing sentence is fine. A recommendation is not.
+WORKED EXAMPLE
 
-WHEN THE USER CANNOT ANSWER
-If they say "I don't know" or decline, you may ask ONE easier question they can
-realistically answer - how they have been feeling lately, whether they check at
-all, what they normally eat it with. Ask only if it would genuinely narrow things
-down. If they cannot answer that either, STOP asking. Never loop, never stall,
-never leave them with nothing.
+Patient asks: "Can I eat mango?"
 
-ANSWERING WITH INCOMPLETE INFORMATION
-When you answer without the context you wanted, your answer MUST be visibly less
-precise than a fully informed one. Precision is a signal of certainty - do not
-fake it.
+Known: Type 2 diabetes, kidney disease, Glucophage, recent glucose data.
+Genuinely missing: portion size, and their kidney stage - potassium limits
+depend on it.
 
-NEVER give a specific number when you do not know their current control.
-No gram weights, no piece counts, no cup measures, no "X to Y pieces".
-A precise number reads as personalised medical advice and will be followed
-exactly, which is dangerous when it was a guess.
+Good response: explain mango is high in natural sugar and moderate in potassium,
+note the kidney disease makes the safe amount depend on their stage, then ask
+ONE question - what stage their kidney disease is at - while offering general
+portion guidance meanwhile.
 
-Instead:
-- Give qualitative guidance - "a small portion", "less than you would normally eat"
-- Name plainly what you could not account for, and why it matters
-- Give ONE concrete action that would let you answer properly next time.
-  This app has a Tracker tab - tell them to add a reading there and ask again.
-- If being wrong could genuinely harm them, say so and route to their doctor
-  or diabetes educator
+Bad: a list of six questions before saying anything useful.
+Bad: "Mango is fine in moderation" - ignores the kidney disease on file.
+"""
 
-INSULIN AND FOOD PORTIONS
-For anyone on insulin, food amounts are governed by carbohydrate counting and
-their own insulin plan - NOT by a fixed portion that applies to everyone.
-Never imply a universal safe portion exists for them. Explain the carb-counting
-principle, and send them to their doctor or diabetes educator for actual numbers.
-Giving a type 1 patient a piece count is a mistake, even when it sounds cautious.
 
-WHAT YOU MUST NEVER ASK
-Anything already in the profile above - their diabetes type, medicines,
-conditions, age, sex, HbA1c if recorded, or recent readings if glucose history
-is present. Asking again looks careless and breaks trust.
+    prompt += """
 
-========== FOOD AND DIET QUESTIONS ==========
+FOOD AND DIET QUESTIONS
 
-Food questions are TIER: PERSONAL. The gate above applies to them in full -
-this section describes what to do once the gate has passed.
+For any question about eating a specific food:
 
-When you DO answer a food question, structure it as:
-1. Whether it can be eaten, with a specific portion
-2. The reason, tied to this person's own profile
+Never give a simple yes or no.
+
+Always structure the answer as:
+1. Whether it can be eaten, with the specific portion limit
+2. The reason, tied to this patient's own profile
 3. Which of their conditions or medicines affect this
 4. What to watch for afterwards
 
-If they have kidney disease, heart disease, or high blood pressure, you MUST
-say how that condition specifically affects this food before any portion advice.
+If the patient has kidney disease, heart disease, or high blood
+pressure, you MUST mention how that condition specifically
+affects this food before giving any portion advice.
 
-If HbA1c is above 9, state that this advice assumes control is improving,
-and encourage doctor review.
+If glucose control is poor (HbA1c above 9) you MUST state that
+this food advice assumes improving control, and encourage
+doctor review.
 
-Never present a food as simply safe without naming the condition or medicine
-that makes it conditional.
+Never present a food as simply safe without naming the condition
+or medication that makes it conditional.
+"""
 
-========== WORKED EXAMPLES ==========
+    # -------------------------------------------------
+    # Examples
+    # -------------------------------------------------
 
-User: "What is diabetes?"
-{"tier":"education","needs_context":false,"message":"...explanation...",
- "quick_replies":["What causes type 2?","How is it diagnosed?"]}
+    prompt += """
 
-User: "How many units should I take?"
-{"tier":"prescribing","needs_context":false,"message":"I can't work out insulin
- doses - that has to come from your doctor...","quick_replies":[]}
+Examples
 
-User: "Can I eat mango?" - profile has type 2, Glucophage, no recent readings
-{"tier":"personal","needs_context":true,"message":"Mango is a big part of summer
- here, so let's work out what's right for you. I can see you're on Glucophage.
- Before I suggest a portion - what was your last blood sugar reading?",
- "quick_replies":["Under 140","140 to 200","Over 200","I don't know"]}
+If patient asks:
 
-User: "Can I eat mango?" - profile has type 2, kidney disease, good recent data
-{"tier":"personal","needs_context":true,"message":"With kidney disease, mango
- matters for two reasons - sugar and potassium - and the safe amount depends on
- your kidney stage. Do you know what stage yours is?",
- "quick_replies":["Stage 1 or 2","Stage 3","Stage 4 or 5","I don't know"]}
+"What is diabetes?"
 
-BAD - never do this:
-{"needs_context":true,"message":"You can have about half a cup. By the way,
- what was your last reading?"}
-That gives the recommendation anyway, which defeats the gate entirely.
+Answer immediately.
 
-User: "I don't know" - after being asked for their reading, profile is type 1
-BAD: "Yes, a small portion - about 8 to 10 small pieces." A precise piece count
- given without knowing their control, to someone whose portions are set by carb
- counting and insulin. Precise numbers imply certainty you do not have.
-GOOD:
-{"tier":"personal","needs_context":false,"message":"No problem, that happens.
- Here's what I can tell you without it.\n\nMango is high in natural sugar, so
- the principle is a small portion rather than a full one - and eaten with a
- meal or some protein rather than on its own.\n\nWhat I can't tell you is the
- right amount for YOU. With type 1, how much fruit you can have isn't a fixed
- number - it depends on carbohydrate counting and your insulin plan, which your
- doctor or diabetes educator sets with you. Anyone giving you a piece count
- without knowing that is guessing.\n\nIf you add a reading in the Tracker tab
- after you next check, ask me again and I can be much more specific.",
- "quick_replies":["How does carb counting work?","What should I watch for?"]}
+------------------------------------
+
+If patient asks:
+
+"My sugar is 6"
+
+Ask
+
+"Is that 6 mg/dL or 6 mmol/L?"
+
+------------------------------------
+
+If patient asks
+
+"What fruits can I eat?"
+
+Use diabetes type,
+kidney disease,
+heart disease,
+and medications already stored.
+
+Ask only if essential information is missing.
+
+------------------------------------
+
+If patient asks
+
+"Can I exercise?"
+
+Use existing profile.
+
+Ask about insulin only if insulin information is missing.
+
+------------------------------------
+
+If patient asks
+
+"How much insulin should I take?"
+
+Never calculate insulin doses.
+
+Recommend contacting the treating doctor.
+
 """
 
     # -------------------------------------------------
@@ -778,47 +624,76 @@ GOOD:
     # -------------------------------------------------
 
     diabetes_type = profile.diabetes_type.strip().lower()
-
     if diabetes_type == "type1":
+
         prompt += """
 
 TYPE 1 DIABETES
 
-Focus on insulin, hypoglycemia prevention, carbohydrate counting, sick-day rules.
+Focus on
+
+- insulin
+
+- hypoglycemia prevention
+
+- carbohydrate counting
+
+- sick-day rules
+
 """
 
     elif diabetes_type == "type2":
+
         prompt += """
 
 TYPE 2 DIABETES
 
-Focus on diet, exercise, weight management, oral medicines.
+Focus on
+
+- diet
+
+- exercise
+
+- weight management
+
+- oral medicines
+
 """
 
     elif diabetes_type == "gestational":
+
         prompt += """
 
 GESTATIONAL DIABETES
 
 Always recommend close obstetric follow-up.
+
 Avoid medication recommendations.
+
 """
 
     elif diabetes_type == "none":
+
         prompt += """
 
 EDUCATION MODE - NO DIABETES
 
-This user does not have diabetes. They are learning, or trying to understand
-the condition for a family member.
+This user does not have diabetes.
+
+They are using the app for general learning,
+or to understand the condition for a family member.
 
 Answer as a diabetes educator giving general information.
+
 Do NOT address them as a patient.
+
 Do NOT assume they have symptoms, medications, or complications.
+
 Do NOT give them personal management advice.
-Almost every question here is TIER: EDUCATION, so the gate rarely applies.
-If they ask about a specific person's care, remind them that person should
-consult their own doctor.
+
+If they ask about a specific person's care,
+remind them that person should consult their own doctor.
+
 """
 
     # -------------------------------------------------
@@ -828,76 +703,85 @@ consult their own doctor.
     if profile.hba1c is not None:
 
         if profile.hba1c >= 9:
+
             prompt += f"""
 
 IMPORTANT
 
-HbA1c is {profile.hba1c}%, which is high. Encourage early doctor review, and
-state that food and activity advice assumes control is being worked on.
+HbA1c is {profile.hba1c}%.
+
+Encourage early doctor review.
+
 """
 
         elif profile.hba1c >= 7:
+
             prompt += f"""
 
-HbA1c is {profile.hba1c}%. Encourage continued diabetes management.
-"""
+HbA1c
 
-    else:
-        prompt += """
+Current HbA1c
 
-HbA1c is not recorded. If a question genuinely depends on overall control and
-there is no recent glucose data either, asking for their last HbA1c is
-reasonable - but only if it would actually change your advice.
+{profile.hba1c}%
+
+Encourage continued diabetes management.
+
 """
 
     # -------------------------------------------------
-    # Other Conditions  (now reads the combined list)
+    # Other Conditions
     # -------------------------------------------------
 
-    conditions_text = " ".join(all_conditions).lower()
+    conditions = " ".join(profile.other_conditions).lower()
 
-    if "kidney" in conditions_text:
+    if "kidney" in conditions:
+
         prompt += """
 
-KIDNEY DISEASE ON FILE
+Kidney disease detected.
+
 Avoid fixed protein recommendations.
-Avoid potassium advice without knowing their kidney stage.
-For any potassium-rich food (bananas, mangoes, oranges, potatoes, tomatoes,
-dates, coconut water), you MUST address potassium before giving a portion.
+
+Avoid potassium advice.
+
 Recommend nephrologist or renal dietitian when appropriate.
+
 """
 
-    if "heart" in conditions_text:
+    if "heart" in conditions:
+
         prompt += """
 
-HEART DISEASE ON FILE
-Recommend heart-healthy diet. Address sodium and saturated fat for food questions.
-Avoid strenuous exercise advice; suggest clearing activity changes with their doctor.
+Heart disease detected.
+
+Recommend heart-healthy diet.
+
+Avoid strenuous exercise advice.
+
 """
 
-    if "blood pressure" in conditions_text:
+    if "blood pressure" in conditions:
+
         prompt += """
 
-HIGH BLOOD PRESSURE ON FILE
-Recommend lower sodium diet. Encourage regular BP monitoring.
-Mention sodium content when discussing any packaged or salty food.
+High blood pressure detected.
+
+Recommend lower sodium diet.
+
+Encourage regular BP monitoring.
+
 """
 
-    if "pregnan" in conditions_text:
+    if "pregnan" in conditions:
+
         prompt += """
 
-PREGNANCY ON FILE
+Pregnancy detected.
+
 Never recommend medication changes.
+
 Encourage obstetric follow-up.
-Be more cautious than usual; prefer asking over assuming.
-"""
 
-    if "foot" in conditions_text or "ulcer" in conditions_text:
-        prompt += """
-
-FOOT ULCER OR AMPUTATION HISTORY ON FILE
-Emphasize daily foot checks and proper footwear.
-Any new foot wound, colour change, or numbness warrants same-week medical review.
 """
 
     # -------------------------------------------------
@@ -905,89 +789,34 @@ Any new foot wound, colour change, or numbness warrants same-week medical review
     # -------------------------------------------------
 
     if profile.response_style == "simple":
+
         prompt += """
 
-Use short sentences and simple English. Maximum four short paragraphs.
+Use
+
+short sentences.
+
+Simple English.
+
+Maximum four short paragraphs.
+
 """
+
     else:
+
         prompt += """
 
-Provide detailed explanations. Explain step by step.
+Provide detailed explanations.
+
+Use headings.
+
+Explain step by step.
+
 """
 
     prompt += "\n========== END PROFILE ==========\n"
 
     return prompt
-
-
-# =====================================================
-# Structured response parsing
-# =====================================================
-
-def parse_model_reply(raw: str) -> dict:
-    """Parse the model's JSON reply, falling back to plain text if malformed."""
-
-    text = (raw or "").strip()
-
-    fallback = {
-        "response": text or "Sorry, I could not process that right now. Please try again.",
-        "needs_context": False,
-        "quick_replies": [],
-        "tier": None,
-    }
-
-    if not text:
-        return fallback
-
-    cleaned = text
-    if cleaned.startswith("```"):
-        cleaned = re.sub(r"^```[a-zA-Z]*\s*", "", cleaned)
-        cleaned = re.sub(r"\s*```$", "", cleaned)
-        cleaned = cleaned.strip()
-
-    # If there is prose around the object, take the outermost braces.
-    if not cleaned.startswith("{"):
-        start = cleaned.find("{")
-        end = cleaned.rfind("}")
-        if start == -1 or end == -1 or end <= start:
-            return fallback
-        cleaned = cleaned[start:end + 1]
-
-    try:
-        data = json.loads(cleaned)
-    except json.JSONDecodeError:
-        return fallback
-
-    if not isinstance(data, dict):
-        return fallback
-
-    message = str(data.get("message") or "").strip()
-    if not message:
-        return fallback
-
-    replies_raw = data.get("quick_replies") or []
-    replies = []
-    if isinstance(replies_raw, list):
-        for item in replies_raw:
-            value = str(item).strip()
-            if value:
-                replies.append(value[:60])
-    replies = replies[:4]
-
-    tier = str(data.get("tier") or "").strip().lower() or None
-    needs_context = bool(data.get("needs_context"))
-
-    # Enforce the tier invariants in code, not just in the prompt.
-    if tier in ("emergency", "prescribing"):
-        needs_context = False
-
-    return {
-        "response": message,
-        "needs_context": needs_context,
-        "quick_replies": replies,
-        "tier": tier,
-    }
-
 
 # =====================================================
 # Fact Extraction Endpoint
@@ -999,9 +828,7 @@ class ExtractRequest(BaseModel):
 
 
 @app.post("/api/v1/extract-facts")
-async def extract_facts(request: ExtractRequest, uid: str = Depends(current_uid)):
-
-    enforce_rate_limit(uid)
+async def extract_facts(request: ExtractRequest):
 
     if len(request.conversation) < 2:
         return {"facts": request.existing_facts}
@@ -1032,8 +859,6 @@ INCLUDE only things that remain true across sessions:
 - devices they use, such as a glucometer or CGM
 - practical constraints, for example cost or work schedule
 - family or caregiver situation relevant to their care
-- answers they gave to clarifying questions, for example their kidney
-  stage, insulin type, or usual pre-meal readings
 
 EXCLUDE:
 - anything already in the existing facts list
@@ -1066,6 +891,7 @@ Example: ["Patient walks 30 minutes daily", "Patient uses a glucometer twice a w
 
         raw = raw.removeprefix("```json").removeprefix("```").removesuffix("```").strip()
 
+        import json
         facts = json.loads(raw)
 
         if not isinstance(facts, list):
@@ -1079,95 +905,6 @@ Example: ["Patient walks 30 minutes daily", "Patient uses a glucometer twice a w
         print("FACT EXTRACTION ERROR:", e)
         return {"facts": request.existing_facts}
 
-
-# =====================================================
-# Personalized Tips Endpoint
-# =====================================================
-
-class TipsRequest(BaseModel):
-    profile: ProfileData
-
-
-@app.post("/api/v1/tips")
-async def get_tips(request: TipsRequest, uid: str = Depends(current_uid)):
-
-    enforce_rate_limit(uid)
-
-    p = request.profile
-
-    all_conditions = [c for c in (p.other_conditions + p.complications) if c]
-
-    context = f"Age {p.age}, {p.sex}, diabetes type: {p.diabetes_type}."
-    if p.medications:
-        context += f" Medicines: {', '.join(p.medications)}."
-    if all_conditions:
-        context += f" Other conditions: {', '.join(all_conditions)}."
-    if p.hba1c is not None:
-        context += f" HbA1c: {p.hba1c}%."
-    if p.glucose_summary:
-        context += f" Recent glucose: {p.glucose_summary}"
-    if p.smoking_status == "Current":
-        context += " Patient currently smokes."
-
-    language_note = "Write in Urdu script." if p.language == "ur" else "Write in simple English."
-
-    role_note = {
-        "patient": "These are for a person managing their own diabetes.",
-        "educational": "These are general educational facts for a student, not personal advice.",
-        "professional": "These are clinical practice points for a healthcare professional.",
-        "caregiver": "These are practical points for someone caring for a person with diabetes.",
-    }.get(p.purpose, "These are for a person managing their own diabetes.")
-
-    tips_prompt = f"""Write 6 short, practical diabetes tips.
-
-PERSON: {context}
-CONTEXT: {role_note}
-LANGUAGE: {language_note}
-
-RULES:
-- Each tip one or two sentences, plain and specific.
-- Tailor to this person's actual profile above - mention their conditions
-  or medicines where relevant.
-- Never recommend medication or insulin doses.
-- Never diagnose.
-- Practical and encouraging, not frightening.
-- Suitable for Pakistan: mention local foods and habits where natural.
-
-Return ONLY a JSON array of 6 strings, no other text.
-Example: ["Walk for 20 minutes after dinner.", "Check your feet daily for cuts."]
-"""
-
-    try:
-        response = client.messages.create(
-            model="claude-haiku-4-5",
-            max_tokens=900,
-            temperature=0.7,
-            messages=[{"role": "user", "content": tips_prompt}]
-        )
-
-        raw = response.content[0].text.strip()
-        raw = raw.removeprefix("```json").removeprefix("```").removesuffix("```").strip()
-
-        tips = json.loads(raw)
-
-        if not isinstance(tips, list):
-            raise ValueError("not a list")
-
-        clean = [str(t).strip() for t in tips if str(t).strip()][:8]
-        return {"tips": clean}
-
-    except Exception as e:
-        print("TIPS ERROR:", e)
-        return {"tips": [
-            "Check your blood sugar regularly and write down the readings.",
-            "Take your medicines at the same time each day.",
-            "Walk for 20 to 30 minutes most days if your doctor agrees.",
-            "Drink water instead of sugary drinks and juices.",
-            "Check your feet every day for cuts or sores.",
-            "Keep your regular appointments with your doctor."
-        ]}
-
-
 # =====================================================
 # Health Check
 # =====================================================
@@ -1177,10 +914,8 @@ def health():
     return {
         "status": "running",
         "app": "GlycoAI",
-        "version": "1.2",
-        "language": "English / urdu",
-        "auth_required": REQUIRE_AUTH,
-        "auth_ready": _firebase_ready,
+        "version": "1.0",
+        "language": "English / urdu"
     }
 
 
@@ -1188,30 +923,19 @@ def health():
 # Chat Endpoint
 # =====================================================
 
-# Raised from 6: the gate asks follow-up questions, so the model needs to see
-# enough turns to know what it already asked and what was answered.
-MAX_HISTORY = 14
-
-
 @app.post("/api/v1/chat")
-async def chat(request: ChatRequest, uid: str = Depends(current_uid)):
-
-    enforce_rate_limit(uid)
-    check_attachment_size(request)
+async def chat(request: ChatRequest):
 
     # ---------------------------------------------
     # Safety Check
     # ---------------------------------------------
 
-    safety = check_safety(request.message, request.profile.glucose_unit)
+    safety = check_safety(request.message)
 
     if safety["blocked"]:
         return {
             "response": safety["response"],
-            "safety_triggered": True,
-            "needs_context": False,
-            "quick_replies": [],
-            "tier": "emergency",
+            "safety_triggered": True
         }
 
     # ---------------------------------------------
@@ -1220,7 +944,16 @@ async def chat(request: ChatRequest, uid: str = Depends(current_uid)):
 
     system_prompt = build_system_prompt(request.profile)
 
-    messages = list(request.conversation_history[-MAX_HISTORY:])
+    print("=== PROFILE RECEIVED ===")
+    print(request.profile)
+    print("========================")
+
+
+    # Keep only the last few messages
+
+    MAX_HISTORY = 6
+
+    messages = request.conversation_history[-MAX_HISTORY:]
 
     # ---------------------------------------------
     # Image Message
@@ -1298,26 +1031,22 @@ async def chat(request: ChatRequest, uid: str = Depends(current_uid)):
 
             model="claude-sonnet-4-6",
 
-            max_tokens=1200,
+            max_tokens=600,
 
             temperature=0.3,
 
             system=system_prompt,
 
-            messages=messages,
+            messages=messages
 
-            # Nudges the model straight into the JSON object.
-            stop_sequences=[]
         )
 
-        parsed = parse_model_reply(response.content[0].text)
-
         return {
-            "response": parsed["response"],
-            "safety_triggered": False,
-            "needs_context": parsed["needs_context"],
-            "quick_replies": parsed["quick_replies"],
-            "tier": parsed["tier"],
+
+            "response": response.content[0].text,
+
+            "safety_triggered": False
+
         }
 
     except Exception as e:
@@ -1325,8 +1054,5 @@ async def chat(request: ChatRequest, uid: str = Depends(current_uid)):
 
         return {
             "response": "Sorry, I could not process that right now. Please try again in a moment.",
-            "safety_triggered": False,
-            "needs_context": False,
-            "quick_replies": [],
-            "tier": None,
+            "safety_triggered": False
         }
