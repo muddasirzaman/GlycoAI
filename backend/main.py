@@ -450,6 +450,7 @@ DOSING_RESPONSE_UR = (
     "اور سمجھ نہ آ رہا ہو کہ کیا کریں، تو اسے فوری سمجھیں اور مدد لیں۔"
 )
 
+
 def check_safety(message: str, glucose_unit: str = "mg/dL", language: str = "en"):
     """Hard safety gate that runs before the model sees anything.
 
@@ -501,13 +502,13 @@ def check_safety(message: str, glucose_unit: str = "mg/dL", language: str = "en"
 
     for word, word_nospace in _DOSING_NORM:
         if word and (word in norm or word_nospace in norm_nospace):
-            return {"blocked": True, "response": DOSING_RESPONSE, "tier": "prescribing"}
-
-    return {
+            return {
                 "blocked": True,
                 "response": DOSING_RESPONSE_UR if language == "ur" else DOSING_RESPONSE_EN,
                 "tier": "prescribing",
             }
+
+    return {"blocked": False, "response": None, "tier": None}
 
 
 
