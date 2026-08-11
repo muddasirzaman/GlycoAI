@@ -304,11 +304,10 @@
     <string name="em_confusion_body">Sudden confusion, slurred speech, or acting "not like themselves" can be a sign of dangerously low or high blood sugar.</string>
 
     <string name="em_unconscious_title">Loss of Consciousness</string>
-    <string name="em_unconscious_body">If someone faints or cannot be woken up, call emergency services immediately. Do not give anything by mouth.</string>
+    <string name="em_unconscious_body">If someone faints or cannot be woken, call 1122 immediately and lay them on their side. Do not give anything by mouth — it can go into the lungs. If glucagon has been prescribed and someone knows how to use it, use it. Stay with them until help arrives.</string>
 
-    <string name="em_breathing_title">Difficulty Breathing</string>
-    <string name="em_breathing_body">Trouble breathing, gasping, or feeling like you might pass out needs immediate emergency attention.</string>
-
+    <string name="em_breathing_title">Difficulty Breathing or Chest Pain</string>
+    <string name="em_breathing_body">Trouble breathing, gasping, chest pain or pressure, or pain spreading to the arm or jaw. Call 1122 — do not drive yourself. In diabetes a heart attack can come with less chest pain than usual, so do not talk yourself out of calling.</string>
     <string name="em_weakness_title">Severe Weakness</string>
     <string name="em_weakness_body">Sudden inability to stand, walk, or function normally is a warning sign that should not be ignored.</string>
 

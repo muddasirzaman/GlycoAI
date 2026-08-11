@@ -15,8 +15,8 @@ import android.content.pm.PackageManager
 import android.os.Build
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import androidx.work.ExistingWorkPolicy
-import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import java.util.concurrent.TimeUnit
 import android.content.Context
@@ -53,14 +53,21 @@ class MainActivity : ComponentActivity() {
             )
         }
 
+        // FIX: this was a OneTimeWorkRequest re-enqueued with REPLACE on every
+        // launch, so the 2-hour timer reset each time the app was opened - a
+        // daily user would never have received a single reminder.
+        //
+        // PeriodicWorkRequest repeats; KEEP means an existing schedule is left
+        // alone rather than restarted, which is what made the old version
+        // silently do nothing.
         val reminderRequest =
-            OneTimeWorkRequestBuilder<ReminderWorker>()
+            PeriodicWorkRequestBuilder<ReminderWorker>(1, TimeUnit.DAYS)
                 .setInitialDelay(2, TimeUnit.HOURS)
                 .build()
 
-        WorkManager.getInstance(this).enqueueUniqueWork(
+        WorkManager.getInstance(this).enqueueUniquePeriodicWork(
             "sugar_saathi_reminder",
-            ExistingWorkPolicy.REPLACE,
+            ExistingPeriodicWorkPolicy.KEEP,
             reminderRequest
         )
 

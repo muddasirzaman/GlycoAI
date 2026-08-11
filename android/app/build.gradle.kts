@@ -48,6 +48,20 @@ android {
     buildFeatures {
         compose = true
     }
+
+    // Lets migration tests read the exported schema JSON from assets.
+    sourceSets {
+        getByName("androidTest") {
+            assets.srcDirs(files("$projectDir/schemas"))
+        }
+    }
+}
+
+// Room writes a JSON snapshot of each schema version to app/schemas/.
+// COMMIT THOSE FILES. They are the only record of what each version's tables
+// looked like; without them a correct migration cannot be written later.
+ksp {
+    arg("room.schemaLocation", "$projectDir/schemas")
 }
 
 dependencies {
@@ -79,6 +93,10 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
+    // Lets you actually run a migration against a real v1 database before
+    // shipping it, rather than finding out from a user.
+    androidTestImplementation("androidx.room:room-testing:2.8.4")
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 }
+

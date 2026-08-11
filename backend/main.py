@@ -456,7 +456,7 @@ def check_safety(message: str, glucose_unit: str = "mg/dL"):
 
     for word, word_nospace in _EMERGENCY_NORM:
         if word and (word in norm or word_nospace in norm_nospace):
-            return {"blocked": True, "response": EMERGENCY_RESPONSE}
+            return {"blocked": True, "response": EMERGENCY_RESPONSE, "tier": "emergency"}
 
     # Computed once: used to escalate borderline readings below.
     has_symptom = any(
@@ -482,19 +482,19 @@ def check_safety(message: str, glucose_unit: str = "mg/dL"):
         # Symptoms turn a borderline reading into an urgent one. 65 alone is a
         # hypo to treat at home; 65 with confusion is not.
         if mgdl <= GLUCOSE_SEVERE_LOW_MGDL:
-            return {"blocked": True, "response": EMERGENCY_RESPONSE}
+            return {"blocked": True, "response": EMERGENCY_RESPONSE, "tier": "emergency"}
 
         if mgdl < GLUCOSE_LOW_MGDL and has_symptom:
-            return {"blocked": True, "response": EMERGENCY_RESPONSE}
+            return {"blocked": True, "response": EMERGENCY_RESPONSE, "tier": "emergency"}
 
         if mgdl >= GLUCOSE_HIGH_MGDL:
-            return {"blocked": True, "response": EMERGENCY_RESPONSE}
+            return {"blocked": True, "response": EMERGENCY_RESPONSE, "tier": "emergency"}
 
     for word, word_nospace in _DOSING_NORM:
         if word and (word in norm or word_nospace in norm_nospace):
-            return {"blocked": True, "response": DOSING_RESPONSE}
+            return {"blocked": True, "response": DOSING_RESPONSE, "tier": "prescribing"}
 
-    return {"blocked": False, "response": None}
+    return {"blocked": False, "response": None, "tier": None}
 
 
 
@@ -1502,7 +1502,11 @@ async def chat(request: ChatRequest, uid: str = Depends(current_uid)):
             "safety_triggered": True,
             "needs_context": False,
             "quick_replies": [],
-            "tier": "emergency",
+            # Pass the real tier through. Hardcoding "emergency" here made a
+            # dosing refusal render as a red emergency card - a false alarm on
+            # a routine question, which is exactly what erodes trust in the
+            # ones that matter.
+            "tier": safety.get("tier", "emergency"),
         }
 
     # ---------------------------------------------
