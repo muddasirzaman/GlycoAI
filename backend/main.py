@@ -429,19 +429,28 @@ EMERGENCY_RESPONSE = (
     "تو منہ میں کچھ نہ ڈالیں۔"
 )
 
-DOSING_RESPONSE = (
+# Unlike the emergency text, this is shown in ONE language only. The emergency
+# response is bilingual because whoever is holding the phone may not be the
+# patient, and comprehension matters more than length. A dosing refusal has no
+# such urgency - doubling its length just makes it harder to read.
+DOSING_RESPONSE_EN = (
     "I can't work out insulin or medicine doses - that has to come from your "
     "own doctor, because it depends on tests and details only they can see.\n\n"
     "Please follow the instructions you were given, and contact your doctor if "
     "you think something needs to change. If you feel unwell right now and are "
-    "unsure what to do, treat it as urgent and seek care.\n\n"
-    "میں انسولین یا دوا کی مقدار نہیں بتا سکتا - یہ صرف آپ کا ڈاکٹر ہی طے کر "
-    "سکتا ہے۔ اپنی موجودہ ہدایات پر عمل کریں، اور تبدیلی کے لیے ڈاکٹر سے "
-    "رابطہ کریں۔"
+    "unsure what to do, treat it as urgent and seek care."
 )
 
+DOSING_RESPONSE_UR = (
+    "میں انسولین یا دوا کی مقدار نہیں بتا سکتا - یہ صرف آپ کا ڈاکٹر ہی طے کر "
+    "سکتا ہے، کیونکہ اس کا انحصار ان ٹیسٹوں اور تفصیلات پر ہے جو صرف وہ "
+    "دیکھ سکتے ہیں۔\n\n"
+    "آپ کو جو ہدایات دی گئی ہیں ان پر عمل کریں، اور اگر آپ کو لگتا ہے کہ کچھ "
+    "بدلنے کی ضرورت ہے تو اپنے ڈاکٹر سے رابطہ کریں۔ اگر ابھی طبیعت ٹھیک نہیں "
+    "اور سمجھ نہ آ رہا ہو کہ کیا کریں، تو اسے فوری سمجھیں اور مدد لیں۔"
+)
 
-def check_safety(message: str, glucose_unit: str = "mg/dL"):
+def check_safety(message: str, glucose_unit: str = "mg/dL", language: str = "en"):
     """Hard safety gate that runs before the model sees anything.
 
     This is a FAST PATH, not the only line of defence. Keyword matching cannot
@@ -494,7 +503,11 @@ def check_safety(message: str, glucose_unit: str = "mg/dL"):
         if word and (word in norm or word_nospace in norm_nospace):
             return {"blocked": True, "response": DOSING_RESPONSE, "tier": "prescribing"}
 
-    return {"blocked": False, "response": None, "tier": None}
+    return {
+                "blocked": True,
+                "response": DOSING_RESPONSE_UR if language == "ur" else DOSING_RESPONSE_EN,
+                "tier": "prescribing",
+            }
 
 
 
@@ -1494,7 +1507,11 @@ async def chat(request: ChatRequest, uid: str = Depends(current_uid)):
     # Safety Check
     # ---------------------------------------------
 
-    safety = check_safety(request.message, request.profile.glucose_unit)
+    safety = check_safety(
+        request.message,
+        request.profile.glucose_unit,
+        request.profile.language,
+    )
 
     if safety["blocked"]:
         return {
