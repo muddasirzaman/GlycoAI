@@ -39,7 +39,8 @@ fun MainTabScreen(
     // is reached through onChatHistory. Nothing here ever called it.
     onChatHistory: () -> Unit,
     onEditProfile: () -> Unit,
-    onPrivacy: () -> Unit
+    onPrivacy: () -> Unit,
+    onReminders: () -> Unit
 ) {
     Scaffold(
         // FIX: ALL bottom inset handling lives here, in exactly one place.
@@ -129,7 +130,8 @@ fun MainTabScreen(
                 1 -> GlucoseHubScreen(
                     onBack = { onTabSelected(0) },
                     onAddReading = onAddReading,
-                    onViewReadings = { onTabSelected(2) }
+                    onViewReadings = { onTabSelected(2) },
+                    onReminders = onReminders
                 )
                 2 -> GlucoseHistoryScreen(
                     glucoseViewModel = glucoseViewModel,

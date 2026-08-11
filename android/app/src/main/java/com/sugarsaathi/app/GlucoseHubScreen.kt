@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -19,7 +20,8 @@ import androidx.compose.ui.res.stringResource
 fun GlucoseHubScreen(
     onBack: () -> Unit,
     onAddReading: () -> Unit,
-    onViewReadings: () -> Unit
+    onViewReadings: () -> Unit,
+    onReminders: () -> Unit
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
 
@@ -94,6 +96,29 @@ fun GlucoseHubScreen(
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.White
+                )
+            }
+
+            Spacer(Modifier.height(16.dp))
+
+            // Outlined rather than filled: reminders are set up occasionally,
+            // whereas the two buttons above are used every day. It should be
+            // easy to find without competing with them.
+            OutlinedButton(
+                onClick = onReminders,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(60.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = TealGreen),
+                border = androidx.compose.foundation.BorderStroke(1.5.dp, TealGreen)
+            ) {
+                Icon(Icons.Default.Notifications, contentDescription = null)
+                Spacer(Modifier.width(10.dp))
+                Text(
+                    stringResource(R.string.reminders_title),
+                    fontSize = 17.sp,
+                    fontWeight = FontWeight.Bold
                 )
             }
         }

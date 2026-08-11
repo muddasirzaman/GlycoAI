@@ -95,6 +95,11 @@ class MainActivity : ComponentActivity() {
                 val glucoseViewModel: GlucoseViewModel = viewModel()
                 var showChatHistory by remember { mutableStateOf(false) }
                 var showPrivacy by remember { mutableStateOf(false) }
+                var showReminders by remember { mutableStateOf(false) }
+                // null = list view; a Reminder = edit that one; NEW_REMINDER = create
+                var editingReminder by remember { mutableStateOf<Reminder?>(null) }
+                var addingReminder by remember { mutableStateOf(false) }
+                val reminderViewModel: ReminderViewModel = viewModel()
                 chatVM = chatViewModel
 
                 LaunchedEffect(Unit) {
@@ -107,6 +112,7 @@ class MainActivity : ComponentActivity() {
                     isLoading = false
                     chatViewModel.initProfileRepo(this@MainActivity)
                     glucoseViewModel.init(this@MainActivity)
+                    reminderViewModel.init(this@MainActivity)
                 }
 
                 when {
@@ -175,6 +181,27 @@ class MainActivity : ComponentActivity() {
                         )
                     }
 
+                    // Add / edit sits above the list so Back returns to it.
+                    addingReminder || editingReminder != null -> {
+                        ReminderEditScreen(
+                            existing = editingReminder,
+                            reminderViewModel = reminderViewModel,
+                            onDone = {
+                                addingReminder = false
+                                editingReminder = null
+                            }
+                        )
+                    }
+
+                    showReminders -> {
+                        RemindersScreen(
+                            reminderViewModel = reminderViewModel,
+                            onBack = { showReminders = false },
+                            onAdd = { addingReminder = true },
+                            onEdit = { editingReminder = it }
+                        )
+                    }
+
                     showPrivacy -> {
                         PrivacyScreen(
                             onBack = { showPrivacy = false },
@@ -209,7 +236,8 @@ class MainActivity : ComponentActivity() {
                             // onOpenSession removed - MainTabScreen never used it.
                             onChatHistory = { showChatHistory = true },
                             onEditProfile = { showOnboarding = true },
-                            onPrivacy = { showPrivacy = true }
+                            onPrivacy = { showPrivacy = true },
+                            onReminders = { showReminders = true }
                         )
                     }
                 }

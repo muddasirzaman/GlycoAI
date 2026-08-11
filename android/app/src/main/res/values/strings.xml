@@ -1,6 +1,8 @@
 <resources>
-    <string name="in_collaboration_with">In collaboration with</string>
-    <string name="daily_tips_title">💡 Today\'s tips</string>
+
+    <string name="step_progress">Step %1$d of %2$d</string>
+    <string name="daily_tips_title">💡 Today\'s tip</string>
+
 
     <string name="i_understand">I Understand</string>
 
@@ -107,7 +109,6 @@
     <string name="age_hint">e.g. 45</string>
     <string name="year_hint">e.g. 2019</string>
     <string name="hba1c_hint">e.g. 7.8</string>
-    <string name="step_progress">Step %1$d of 6</string>
 
     <!-- About Yourself additions -->
     <string name="country_region">Country / Region</string>
@@ -341,4 +342,42 @@
 
     <string name="sugg_disclaimer">This is general guidance, not a substitute for your doctor\'s advice.</string>
 
+    <!-- Smart Reminders -->
+    <string name="reminders_title">Smart Reminders</string>
+    <string name="reminder_channel_name">Reminders</string>
+    <string name="reminder_channel_desc">Glucose, medication and appointment reminders</string>
+    <string name="reminder_generic_body">Take a moment to check your diabetes care today.</string>
+
+    <string name="rem_add">＋  Add Reminder</string>
+    <string name="rem_new">New Reminder</string>
+    <string name="rem_edit">Edit Reminder</string>
+    <string name="rem_save">Save Reminder</string>
+    <string name="rem_delete">Delete</string>
+    <string name="rem_delete_title">Delete reminder?</string>
+    <string name="rem_delete_confirm">\"%1$s\" will be removed and will no longer notify you.</string>
+    <string name="rem_empty">No reminders yet.\nTap Add Reminder to create your first one.</string>
+    <string name="rem_pick_a_day">Please choose at least one day.</string>
+
+    <string name="rem_field_type">Reminder type</string>
+    <string name="rem_field_title">Title</string>
+    <string name="rem_field_time">Time</string>
+    <string name="rem_field_repeat">Repeat</string>
+    <string name="rem_field_date">Date</string>
+    <string name="rem_field_days">Days</string>
+    <string name="rem_field_notes">Notes (optional)</string>
+    <string name="rem_title_hint">e.g. Check glucose</string>
+    <string name="rem_notes_hint">e.g. Before breakfast</string>
+
+    <string name="rem_repeat_once">Once</string>
+    <string name="rem_repeat_daily">Every day</string>
+    <string name="rem_repeat_weekly">Every week</string>
+    <string name="rem_repeat_custom">Chosen days</string>
+
+    <string name="rem_type_glucose">Glucose Measurement</string>
+    <string name="rem_type_medication">Medication</string>
+    <string name="rem_type_water">Water</string>
+    <string name="rem_type_exercise">Exercise</string>
+    <string name="rem_type_appointment">Doctor Appointment</string>
+    <string name="rem_type_hba1c">HbA1c Test</string>
+    <string name="rem_type_meal">Meal</string>
 </resources>

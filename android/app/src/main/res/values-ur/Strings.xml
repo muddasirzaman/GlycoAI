@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="in_collaboration_with">اشتراک کے ساتھ</string>
-    <string name="daily_tips_title">💡 آج کے مشورے</string>
+
+    <string name="step_progress">مرحلہ %1$d از %2$d</string>
+    <string name="daily_tips_title">💡 آج کا مشورہ</string>
     <string name="developed_in_collaboration">کے اشتراک سے تیار کیا گیا</string>
     <string name="i_understand">میں سمجھ گیا/گئی</string>
 
@@ -106,7 +107,7 @@
     <string name="age_hint">مثلاً 45</string>
     <string name="year_hint">مثلاً 2019</string>
     <string name="hba1c_hint">مثلاً 7.8</string>
-    <string name="step_progress">مرحلہ %1$d از 6</string>
+
 
     <!-- About Yourself additions -->
     <string name="country_region">ملک / علاقہ</string>
@@ -341,5 +342,43 @@
 
     <string name="sugg_disclaimer">یہ عمومی رہنمائی ہے، ڈاکٹر کے مشورے کا متبادل نہیں۔</string>
 
+    <!-- Smart Reminders -->
+    <string name="reminders_title">اسمارٹ یاد دہانیاں</string>
+    <string name="reminder_channel_name">یاد دہانیاں</string>
+    <string name="reminder_channel_desc">شوگر، دوا اور ڈاکٹر کی ملاقات کی یاد دہانیاں</string>
+    <string name="reminder_generic_body">آج اپنی ذیابیطس کی دیکھ بھال کے لیے کچھ وقت نکالیں۔</string>
+
+    <string name="rem_add">＋  یاد دہانی شامل کریں</string>
+    <string name="rem_new">نئی یاد دہانی</string>
+    <string name="rem_edit">یاد دہانی میں تبدیلی</string>
+    <string name="rem_save">محفوظ کریں</string>
+    <string name="rem_delete">حذف کریں</string>
+    <string name="rem_delete_title">یاد دہانی حذف کریں؟</string>
+    <string name="rem_delete_confirm">\"%1$s\" حذف ہو جائے گی اور آئندہ اطلاع نہیں دے گی۔</string>
+    <string name="rem_empty">ابھی کوئی یاد دہانی نہیں۔\nپہلی بنانے کے لیے شامل کریں دبائیں۔</string>
+    <string name="rem_pick_a_day">کم از کم ایک دن منتخب کریں۔</string>
+
+    <string name="rem_field_type">یاد دہانی کی قسم</string>
+    <string name="rem_field_title">عنوان</string>
+    <string name="rem_field_time">وقت</string>
+    <string name="rem_field_repeat">دہرائیں</string>
+    <string name="rem_field_date">تاریخ</string>
+    <string name="rem_field_days">دن</string>
+    <string name="rem_field_notes">نوٹس (اختیاری)</string>
+    <string name="rem_title_hint">مثلاً شوگر چیک کریں</string>
+    <string name="rem_notes_hint">مثلاً ناشتے سے پہلے</string>
+
+    <string name="rem_repeat_once">ایک بار</string>
+    <string name="rem_repeat_daily">روزانہ</string>
+    <string name="rem_repeat_weekly">ہر ہفتے</string>
+    <string name="rem_repeat_custom">منتخب دن</string>
+
+    <string name="rem_type_glucose">شوگر کی پیمائش</string>
+    <string name="rem_type_medication">دوا</string>
+    <string name="rem_type_water">پانی</string>
+    <string name="rem_type_exercise">ورزش</string>
+    <string name="rem_type_appointment">ڈاکٹر کی ملاقات</string>
+    <string name="rem_type_hba1c">HbA1c ٹیسٹ</string>
+    <string name="rem_type_meal">کھانا</string>
 
 </resources>
