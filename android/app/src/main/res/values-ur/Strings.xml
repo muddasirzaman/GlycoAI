@@ -457,5 +457,50 @@
     <string name="separate_commas_generic">ایک سے زیادہ کو کوما سے الگ کریں۔ کوئی نہ ہو تو خالی چھوڑ دیں۔</string>
     <string name="hba1c_date_hint">مثلاً مارچ 2026</string>
 
+    <!-- Dashboard -->
+    <string name="dashboard_heading">شوگر ڈیش بورڈ</string>
+    <string name="dashboard_no_data">اس مدت میں کوئی ریڈنگ نہیں۔</string>
+    <string name="range_today">آج</string>
+    <string name="range_7d">7 دن</string>
+    <string name="range_14d">14 دن</string>
+    <string name="range_30d">30 دن</string>
+    <string name="range_in">حد میں</string>
+    <string name="range_above">زیادہ</string>
+    <string name="range_below">کم</string>
+    <string name="stat_fasting_avg">نہار منہ اوسط</string>
+    <string name="stat_postmeal_avg">کھانے کے بعد اوسط</string>
+
+    <!-- HbA1c history -->
+    <string name="hba1c_screen_title">HbA1c ہسٹری</string>
+    <string name="hba1c_open_history">HbA1c ہسٹری دیکھیں</string>
+    <string name="hba1c_summary_heading">HbA1c</string>
+    <string name="hba1c_current">موجودہ</string>
+    <string name="hba1c_previous">پچھلا</string>
+    <string name="hba1c_trend">رجحان</string>
+    <string name="hba1c_trend_down">بہتر ہو رہا ہے</string>
+    <string name="hba1c_trend_up">بگڑ رہا ہے</string>
+    <string name="hba1c_trend_level">مستحکم</string>
+    <string name="hba1c_no_entries_yet">پہلی لیب رپورٹ درج کریں تاکہ موجودہ، پچھلا اور رجحان نظر آ سکے۔</string>
+    <string name="hba1c_none_yet">ابھی کوئی HbA1c اندراج نہیں۔</string>
+    <string name="hba1c_lab_only_note">صرف اصل لیب رپورٹ سے قدر درج کریں۔ اندازہ لگائی گئی قدریں لیب رزلٹ نہیں ہیں۔</string>
+    <string name="hba1c_add_button">لیب رپورٹ درج کریں</string>
+    <string name="hba1c_add_title">HbA1c اندراج</string>
+    <string name="hba1c_add_note">اپنی لیب رپورٹ سے قدر اور تاریخ درج کریں۔</string>
+    <string name="hba1c_value_label">HbA1c قدر (%)</string>
+    <string name="hba1c_value_error">3.5 سے 20 کے درمیان قدر درج کریں</string>
+    <string name="hba1c_date_label">ٹیسٹ کی تاریخ</string>
+    <string name="hba1c_date_error">YYYY-MM-DD فارمیٹ؛ مستقبل کی تاریخ نہیں ہو سکتی</string>
+    <string name="hba1c_today">آج</string>
+    <string name="hba1c_1mo">1 مہینہ پہلے</string>
+    <string name="hba1c_3mo">3 مہینے پہلے</string>
+    <string name="hba1c_note_label">نوٹ (اختیاری)</string>
+    <string name="hba1c_note_hint">مثلاً نہار منہ، چغتائی سے</string>
+    <string name="hba1c_save_button">محفوظ کریں</string>
+    <string name="hba1c_cancel">منسوخ</string>
+    <string name="hba1c_delete_title">اندراج حذف کریں؟</string>
+    <string name="hba1c_delete_confirm">یہ لیب رپورٹ ہسٹری سے ہٹا دی جائے گی۔</string>
+    <string name="hba1c_delete_ok">حذف</string>
+    <string name="hba1c_source_lab">لیب</string>
+    <string name="hba1c_source_estimated">اندازہ</string>
 
 </resources>

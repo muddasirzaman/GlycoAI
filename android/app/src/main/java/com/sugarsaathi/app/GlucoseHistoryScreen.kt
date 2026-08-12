@@ -38,7 +38,6 @@ fun GlucoseHistoryScreen(
     onBack: () -> Unit
 ) {
     val readings by glucoseViewModel.readings.collectAsState()
-    val summary = remember(readings) { glucoseViewModel.sevenDaySummary() }
     val latest = readings.firstOrNull()   // list is newest-first
 
     val context = LocalContext.current
@@ -156,8 +155,10 @@ fun GlucoseHistoryScreen(
                     }
                 }
 
+                // Replaces the old fixed 7-day SummaryCard. The card owns its
+                // own range state so this screen doesn't have to track it.
                 item {
-                    SummaryCard(summary)
+                    DashboardCard(viewModel = glucoseViewModel)
                 }
 
                 items(readings) { reading ->
@@ -251,6 +252,11 @@ fun glucoseStatusLabel(value: Float, unit: String): String {
     }
 }
 
+/**
+ * Kept for backwards compatibility - no longer used by GlucoseHistoryScreen,
+ * which now shows DashboardCard instead. Left here so nothing else in the
+ * project breaks if it referenced this composable by name.
+ */
 @Composable
 fun SummaryCard(summary: GlucoseSummary) {
     Card(

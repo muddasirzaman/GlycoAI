@@ -109,6 +109,12 @@ class MainActivity : ComponentActivity() {
                 var addingMedication by remember { mutableStateOf(false) }
                 val medicationViewModel: MedicationViewModel = viewModel()
 
+
+                // HbA1c history. Follows the same pattern as medicationViewModel above:
+// initialised once, and the screen sits above the profile view so Back
+// returns to the sectioned view.
+                val hba1cViewModel: Hba1cViewModel = viewModel()
+                var showHba1cHistory by remember { mutableStateOf(false) }
                 // Sectioned profile (Stage 2). showProfileView opens the
                 // read-only sectioned screen; editingSection (non-null) opens
                 // the editor for one section on top of it, so Back returns to
@@ -135,6 +141,7 @@ class MainActivity : ComponentActivity() {
                     // the plain names from onboarding. Safe to call every launch:
                     // the import only runs when the table is empty.
                     medicationViewModel.init(this@MainActivity)
+                    hba1cViewModel.init(this@MainActivity)
                 }
 
                 when {
@@ -240,17 +247,26 @@ class MainActivity : ComponentActivity() {
                         )
                     }
 
+                    showHba1cHistory -> {
+                        Hba1cHistoryScreen(
+                            viewModel = hba1cViewModel,
+                            onBack = { showHba1cHistory = false }
+                        )
+                    }
+
                     showProfileView -> {
                         ProfileViewScreen(
                             profile = profile!!,
                             onBack = { showProfileView = false },
                             onEditSection = { editingSection = it },
                             onOpenMedications = {
-                                // Reuse the same medications list the Tracker
-                                // hub opens - one editor for medicines, never two.
                                 showProfileView = false
                                 showMedications = true
-                            }
+                            },
+                            onOpenHba1cHistory = {          // NEW
+                                showProfileView = false     // NEW
+                                showHba1cHistory = true     // NEW
+                            }                               // NEW
                         )
                     }
 

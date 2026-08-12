@@ -49,7 +49,8 @@ fun ProfileViewScreen(
     profile: UserProfileData,
     onBack: () -> Unit,
     onEditSection: (ProfileSection) -> Unit,
-    onOpenMedications: () -> Unit
+    onOpenMedications: () -> Unit,
+    onOpenHba1cHistory: () -> Unit
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
 
@@ -119,6 +120,13 @@ fun ProfileViewScreen(
                     profile.hba1c?.let { "${trimNumber(it)}%" }
                 )
                 InfoRow(stringResource(R.string.field_hba1c_date), profile.hba1cDate)
+                Spacer(Modifier.height(8.dp))
+                OutlinedButton(
+                    onClick = onOpenHba1cHistory,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = TealGreen),
+                    border = BorderStroke(1.dp, TealGreen)
+                ) { Text(stringResource(R.string.hba1c_open_history)) }
             }
 
             Spacer(Modifier.height(12.dp))

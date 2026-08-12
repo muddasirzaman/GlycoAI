@@ -457,5 +457,50 @@
     <string name="separate_commas_generic">Separate multiple with commas. Leave blank if none.</string>
     <string name="hba1c_date_hint">e.g. March 2026</string>
 
+    <!-- Dashboard -->
+    <string name="dashboard_heading">Glucose dashboard</string>
+    <string name="dashboard_no_data">No readings in this range yet.</string>
+    <string name="range_today">Today</string>
+    <string name="range_7d">7 days</string>
+    <string name="range_14d">14 days</string>
+    <string name="range_30d">30 days</string>
+    <string name="range_in">In range</string>
+    <string name="range_above">Above</string>
+    <string name="range_below">Below</string>
+    <string name="stat_fasting_avg">Fasting avg</string>
+    <string name="stat_postmeal_avg">Post-meal avg</string>
+
+    <!-- HbA1c history -->
+    <string name="hba1c_screen_title">HbA1c History</string>
+    <string name="hba1c_open_history">View HbA1c history</string>
+    <string name="hba1c_summary_heading">HbA1c</string>
+    <string name="hba1c_current">Current</string>
+    <string name="hba1c_previous">Previous</string>
+    <string name="hba1c_trend">Trend</string>
+    <string name="hba1c_trend_down">Improving</string>
+    <string name="hba1c_trend_up">Worsening</string>
+    <string name="hba1c_trend_level">Stable</string>
+    <string name="hba1c_no_entries_yet">Add your first lab result to see current, previous and trend.</string>
+    <string name="hba1c_none_yet">No HbA1c entries yet.</string>
+    <string name="hba1c_lab_only_note">Only enter values from real lab reports here. Estimated numbers are not clinical results.</string>
+    <string name="hba1c_add_button">Add lab result</string>
+    <string name="hba1c_add_title">Add HbA1c result</string>
+    <string name="hba1c_add_note">Enter the value from your lab report and the date the test was done.</string>
+    <string name="hba1c_value_label">HbA1c value (%)</string>
+    <string name="hba1c_value_error">Enter a value between 3.5 and 20</string>
+    <string name="hba1c_date_label">Test date</string>
+    <string name="hba1c_date_error">Use YYYY-MM-DD; date cannot be in the future</string>
+    <string name="hba1c_today">Today</string>
+    <string name="hba1c_1mo">1 month ago</string>
+    <string name="hba1c_3mo">3 months ago</string>
+    <string name="hba1c_note_label">Note (optional)</string>
+    <string name="hba1c_note_hint">e.g. fasting lab, done at Chughtai</string>
+    <string name="hba1c_save_button">Save</string>
+    <string name="hba1c_cancel">Cancel</string>
+    <string name="hba1c_delete_title">Delete entry?</string>
+    <string name="hba1c_delete_confirm">This lab result will be removed from your history.</string>
+    <string name="hba1c_delete_ok">Delete</string>
+    <string name="hba1c_source_lab">Lab</string>
+    <string name="hba1c_source_estimated">Estimated</string>
 
 </resources>
