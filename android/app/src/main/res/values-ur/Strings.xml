@@ -419,4 +419,43 @@
     <string name="med_timing_after">کھانے کے بعد</string>
     <string name="med_timing_bedtime">سونے سے پہلے</string>
     <string name="med_timing_any">کسی بھی وقت</string>
+
+    <!-- Profile sections (Stage 2) -->
+    <string name="profile_view_title">میری صحت پروفائل</string>
+    <string name="edit_button">تبدیل کریں</string>
+    <string name="save_changes">محفوظ کریں</string>
+    <string name="value_not_set">درج نہیں</string>
+
+    <string name="section_personal">ذاتی معلومات</string>
+    <string name="section_diabetes">ذیابیطس کی معلومات</string>
+    <string name="section_treatment">علاج</string>
+    <string name="section_medical">طبی معلومات</string>
+    <string name="section_provider">معالج ڈاکٹر</string>
+    <string name="section_emergency">ہنگامی رابطہ</string>
+
+    <string name="field_name">نام</string>
+    <string name="field_age">عمر</string>
+    <string name="field_sex">جنس</string>
+    <string name="field_height">قد (سینٹی میٹر)</string>
+    <string name="field_weight">وزن (کلوگرام)</string>
+    <string name="field_diabetes_type">ذیابیطس کی قسم</string>
+    <string name="field_diagnosis_year">تشخیص کا سال</string>
+    <string name="field_glucose_unit">شوگر کی اکائی</string>
+    <string name="field_hba1c">HbA1c</string>
+    <string name="field_hba1c_date">HbA1c کی تاریخ</string>
+    <string name="field_insulin_type">انسولین کی قسم</string>
+    <string name="field_medicines">ادویات</string>
+    <string name="field_allergies">الرجی</string>
+    <string name="field_conditions">دیگر بیماریاں</string>
+    <string name="field_doctor_name">ڈاکٹر کا نام</string>
+    <string name="field_doctor_phone">ڈاکٹر کا فون</string>
+    <string name="field_contact_name">رابطہ نام</string>
+    <string name="field_contact_phone">رابطہ فون</string>
+
+    <string name="open_my_medicines">میری ادویات کھولیں</string>
+    <string name="treatment_edit_note">آپ کی ادویات "میری ادویات" میں منظم ہوتی ہیں، جہاں آپ مقدار اور وقت شامل کر سکتے ہیں۔ یہ حصہ صرف آپ کی انسولین کی قسم کے لیے ہے۔</string>
+    <string name="separate_commas_generic">ایک سے زیادہ کو کوما سے الگ کریں۔ کوئی نہ ہو تو خالی چھوڑ دیں۔</string>
+    <string name="hba1c_date_hint">مثلاً مارچ 2026</string>
+
+
 </resources>

@@ -419,4 +419,43 @@
     <string name="rem_type_appointment">Doctor Appointment</string>
     <string name="rem_type_hba1c">HbA1c Test</string>
     <string name="rem_type_meal">Meal</string>
+
+    <!-- Profile sections (Stage 2) -->
+    <string name="profile_view_title">My Health Profile</string>
+    <string name="edit_button">Edit</string>
+    <string name="save_changes">Save Changes</string>
+    <string name="value_not_set">Not set</string>
+
+    <string name="section_personal">Personal Information</string>
+    <string name="section_diabetes">Diabetes Information</string>
+    <string name="section_treatment">Treatment</string>
+    <string name="section_medical">Medical Information</string>
+    <string name="section_provider">Healthcare Provider</string>
+    <string name="section_emergency">Emergency Contact</string>
+
+    <string name="field_name">Name</string>
+    <string name="field_age">Age</string>
+    <string name="field_sex">Gender</string>
+    <string name="field_height">Height (cm)</string>
+    <string name="field_weight">Weight (kg)</string>
+    <string name="field_diabetes_type">Diabetes type</string>
+    <string name="field_diagnosis_year">Year diagnosed</string>
+    <string name="field_glucose_unit">Blood sugar unit</string>
+    <string name="field_hba1c">HbA1c</string>
+    <string name="field_hba1c_date">HbA1c date</string>
+    <string name="field_insulin_type">Insulin type</string>
+    <string name="field_medicines">Medicines</string>
+    <string name="field_allergies">Allergies</string>
+    <string name="field_conditions">Other conditions</string>
+    <string name="field_doctor_name">Doctor name</string>
+    <string name="field_doctor_phone">Doctor phone</string>
+    <string name="field_contact_name">Contact name</string>
+    <string name="field_contact_phone">Contact phone</string>
+
+    <string name="open_my_medicines">Open My Medicines</string>
+    <string name="treatment_edit_note">Your medicines are managed in My Medicines, where you can add dose and timing. This section is only for your insulin type.</string>
+    <string name="separate_commas_generic">Separate multiple with commas. Leave blank if none.</string>
+    <string name="hba1c_date_hint">e.g. March 2026</string>
+
+
 </resources>

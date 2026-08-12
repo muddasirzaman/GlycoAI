@@ -109,6 +109,15 @@ class MainActivity : ComponentActivity() {
                 var addingMedication by remember { mutableStateOf(false) }
                 val medicationViewModel: MedicationViewModel = viewModel()
 
+                // Sectioned profile (Stage 2). showProfileView opens the
+                // read-only sectioned screen; editingSection (non-null) opens
+                // the editor for one section on top of it, so Back returns to
+                // the view rather than all the way out. This REPLACES the old
+                // behaviour where "Edit my information" re-ran onboarding -
+                // onboarding still runs for genuine first-launch below.
+                var showProfileView by remember { mutableStateOf(false) }
+                var editingSection by remember { mutableStateOf<ProfileSection?>(null) }
+
                 chatVM = chatViewModel
 
                 LaunchedEffect(Unit) {
@@ -215,6 +224,36 @@ class MainActivity : ComponentActivity() {
                         )
                     }
 
+                    // Section editor sits above the profile view, so Back
+                    // returns to the sectioned view. Saving updates the
+                    // in-memory profile immediately via onSaved, so the view
+                    // shows the new value without waiting for a flow emission.
+                    editingSection != null -> {
+                        ProfileSectionEditScreen(
+                            section = editingSection!!,
+                            profile = profile!!,
+                            onDone = { editingSection = null },
+                            onSaved = { updated ->
+                                profile = updated
+                                currentProfile = updated
+                            }
+                        )
+                    }
+
+                    showProfileView -> {
+                        ProfileViewScreen(
+                            profile = profile!!,
+                            onBack = { showProfileView = false },
+                            onEditSection = { editingSection = it },
+                            onOpenMedications = {
+                                // Reuse the same medications list the Tracker
+                                // hub opens - one editor for medicines, never two.
+                                showProfileView = false
+                                showMedications = true
+                            }
+                        )
+                    }
+
                     // Medication add / edit sits above its list, same as
                     // reminders, so Back returns to the medicines list rather
                     // than all the way out to the Tracker tab.
@@ -271,7 +310,11 @@ class MainActivity : ComponentActivity() {
                             onAddReading = { showAddReading = true },
                             // onOpenSession removed - MainTabScreen never used it.
                             onChatHistory = { showChatHistory = true },
-                            onEditProfile = { showOnboarding = true },
+                            // Was showOnboarding = true (re-ran the wizard).
+                            // Now opens the sectioned view/edit screen instead.
+                            // Onboarding still runs for genuine first-launch via
+                            // the onboardingDone check above.
+                            onEditProfile = { showProfileView = true },
                             onPrivacy = { showPrivacy = true },
                             onReminders = { showReminders = true },
                             onMedications = { showMedications = true }
