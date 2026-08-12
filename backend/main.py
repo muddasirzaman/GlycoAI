@@ -203,6 +203,15 @@ class ProfileData(BaseModel):
     allergies: list[str] = Field(default_factory=list)
     hba1c_date: str | None = None
 
+    # Structured medication summary (dose, frequency, timing, insulin flag),
+    # one line per active medicine. None when the patient entered no structured
+    # medicines - in which case the block below is skipped entirely.
+    #
+    # This is ADDITIVE to `medications` above (the plain name list), which is
+    # unchanged. Detail here is for RECOGNITION - naming what the patient takes
+    # - NOT for dose advice. check_safety() refuses dosing regardless of this.
+    medication_detail: str | None = None
+
 
 # =====================================================
 # Incoming Chat Request
@@ -785,6 +794,32 @@ NOT render Markdown tables, headings, or pipe characters. Follow these rules:
         prompt += f"Insulin Type: {profile.insulin_type or 'Unknown'}\n"
         prompt += f"Current Medicines: {', '.join(profile.medications) if profile.medications else 'None'}\n"
 
+        # Structured detail, when the patient has entered it. Gated by the SAME
+        # "medications" relevance check as the name list above, so a question
+        # like "what is HbA1c?" carries neither. The rule that follows is the
+        # important part: this detail lets the model be SPECIFIC about what the
+        # patient takes, and must never become permission to advise on doses or
+        # timing. More context tightens caution here - it never loosens it.
+        if profile.medication_detail:
+            prompt += (
+                "\nMEDICATION DETAILS (patient-entered):\n"
+                f"{profile.medication_detail}\n"
+                "\nHOW TO USE THIS:\n"
+                "- You MAY name what they take, to be specific and reassuring "
+                "(\"I can see you're on Glucophage 500mg twice daily\").\n"
+                "- You MUST NOT tell them what dose to take, whether to take a "
+                "missed dose, whether to double up, or how to time it around "
+                "food or other medicines. That is dose advice - refuse it and "
+                "send them to their doctor or pharmacist, exactly as you would "
+                "if this detail were absent.\n"
+                "- A [insulin] tag means treat food and timing questions with "
+                "extra caution: portions are governed by carb counting and "
+                "their own insulin plan, never a fixed number.\n"
+                "- This is patient-reported, not a verified prescription. If it "
+                "looks wrong or conflicts with what they now say, trust the "
+                "conversation and suggest they confirm with their doctor.\n"
+            )
+
     if "glucose" in relevant:
         prompt += f"Glucose Monitoring: {profile.glucose_monitoring or 'Unknown'}\n"
         prompt += f"Previous Severe Hypoglycemia: {profile.severe_hypoglycemia or 'Unknown'}\n"
@@ -952,6 +987,13 @@ needs_context MUST be false. Never give a dose, never suggest starting,
 stopping, or changing a medicine - no matter how much detail they provide.
 More context NEVER unlocks dose advice. Explain warmly why you cannot, and
 direct them to their doctor.
+
+This applies EVEN when MEDICATION DETAILS above show the exact drug, dose and
+schedule. Seeing "Glucophage 500mg twice daily" lets you NAME it back to them;
+it does NOT let you answer "I missed it, should I take it now?" or "can I take
+two?". Those are dosing questions. Name what you can see, then refuse the dose
+part and route to their doctor or pharmacist. A missed insulin dose is the most
+dangerous case - never advise on it.
 
 TIER: EDUCATION
 Answer directly. needs_context is false. Nothing personal is required to
