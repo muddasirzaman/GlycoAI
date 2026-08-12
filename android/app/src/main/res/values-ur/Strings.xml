@@ -503,4 +503,27 @@
     <string name="hba1c_source_lab">لیب</string>
     <string name="hba1c_source_estimated">اندازہ</string>
 
+    <!-- Backup & Restore -->
+    <string name="backup_title">بیک اپ اور بحالی</string>
+    <string name="backup_intro">اپنی شوگر ریڈنگز، HbA1c ہسٹری، ادویات اور پروفائل کی ایک نقل فون پر محفوظ کریں۔ بعد میں بحال کرنے یا نئے فون پر منتقل کرنے کے لیے استعمال کر سکتے ہیں۔</string>
+    <string name="backup_warning_title">آپ کا طبی ڈیٹا فائل میں محفوظ ہوگا</string>
+    <string name="backup_warning_body">فائل میں آپ کی طبی معلومات، ڈاکٹر اور ہنگامی رابطہ شامل ہے۔ یہ خودکار طور پر انکرپٹ نہیں ہے۔ صرف قابل اعتماد لوگوں کے ساتھ شیئر کریں۔ چیٹ ہسٹری بیک اپ میں شامل نہیں ہے۔</string>
+    <string name="backup_export_button">بیک اپ فائل محفوظ کریں</string>
+    <string name="backup_import_button">فائل سے بحال کریں</string>
+    <string name="backup_working">جاری ہے…</string>
+    <string name="backup_saved">بیک اپ محفوظ ہو گیا (%1$d اشیاء)۔</string>
+    <string name="backup_save_failed">بیک اپ محفوظ نہیں ہو سکا۔ دوبارہ کوشش کریں۔</string>
+    <string name="backup_import_bad_file">یہ درست GlycoAI بیک اپ فائل نہیں ہے۔</string>
+    <string name="backup_import_found_title">بیک اپ سے بحال کریں؟</string>
+    <string name="backup_import_preview">%1$d شوگر ریڈنگز، %2$d HbA1c اندراج، %3$d ادویات ملیں۔</string>
+    <string name="backup_import_includes_profile">فائل میں پروفائل کی معلومات بھی شامل ہیں۔</string>
+    <string name="backup_import_exported_at">برآمد: %1$s</string>
+    <string name="backup_import_prompt">انہیں کیسے شامل کریں؟</string>
+    <string name="backup_import_merge_help">ضم کریں: نئی چیزیں شامل کریں، موجودہ سب کچھ رکھیں۔</string>
+    <string name="backup_import_replace_help">تبدیل کریں: موجودہ ریڈنگز، ادویات اور HbA1c اندراجات مٹا دیں، پھر فائل لوڈ کریں۔ پروفائل بھی تبدیل ہوگا۔</string>
+    <string name="backup_import_merge">ضم کریں</string>
+    <string name="backup_import_replace">تبدیل کریں</string>
+    <string name="backup_cancel">منسوخ</string>
+    <string name="backup_import_done">درآمد ہوا: %1$d شوگر، %2$d HbA1c، %3$d ادویات۔</string>
+
 </resources>

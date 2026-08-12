@@ -109,12 +109,17 @@ class MainActivity : ComponentActivity() {
                 var addingMedication by remember { mutableStateOf(false) }
                 val medicationViewModel: MedicationViewModel = viewModel()
 
+                // Backup & restore. One state flag; opens above the profile
+                // view so Back returns to the sectioned profile rather than
+                // straight to a tab.
+                var showBackup by remember { mutableStateOf(false) }
 
                 // HbA1c history. Follows the same pattern as medicationViewModel above:
-// initialised once, and the screen sits above the profile view so Back
-// returns to the sectioned view.
+                // initialised once, and the screen sits above the profile view so Back
+                // returns to the sectioned view.
                 val hba1cViewModel: Hba1cViewModel = viewModel()
                 var showHba1cHistory by remember { mutableStateOf(false) }
+
                 // Sectioned profile (Stage 2). showProfileView opens the
                 // read-only sectioned screen; editingSection (non-null) opens
                 // the editor for one section on top of it, so Back returns to
@@ -254,6 +259,10 @@ class MainActivity : ComponentActivity() {
                         )
                     }
 
+                    showBackup -> {
+                        BackupScreen(onBack = { showBackup = false })
+                    }
+
                     showProfileView -> {
                         ProfileViewScreen(
                             profile = profile!!,
@@ -263,10 +272,18 @@ class MainActivity : ComponentActivity() {
                                 showProfileView = false
                                 showMedications = true
                             },
-                            onOpenHba1cHistory = {          // NEW
-                                showProfileView = false     // NEW
-                                showHba1cHistory = true     // NEW
-                            }                               // NEW
+                            onOpenHba1cHistory = {
+                                showProfileView = false
+                                showHba1cHistory = true
+                            },
+                            // Backup & Restore lives below the sections. Close
+                            // the view first so Back from BackupScreen returns
+                            // to the profile via a fresh render, rather than
+                            // stacking two screens the user cannot escape.
+                            onOpenBackup = {
+                                showProfileView = false
+                                showBackup = true
+                            }
                         )
                     }
 

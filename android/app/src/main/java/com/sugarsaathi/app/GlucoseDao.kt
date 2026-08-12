@@ -31,7 +31,17 @@ interface GlucoseDao {
     @Query("SELECT * FROM glucose_readings WHERE timestamp >= :since ORDER BY timestamp DESC")
     fun getReadingsSince(since: Long): Flow<List<GlucoseReading>>
 
-    // Wipes every stored reading. Used only by the "Delete my data" flow.
+    /**
+     * One-shot snapshot. Used by BackupManager: reading the flow with .first()
+     * works but keeps a subscription alive for the whole coroutine, which is
+     * wasted work for a single build-a-file operation.
+     */
+    @Query("SELECT * FROM glucose_readings ORDER BY timestamp DESC")
+    suspend fun getAllOnce(): List<GlucoseReading>
+
+    // Wipes every stored reading. Used by "Delete my data" and by a REPLACE
+    // import in BackupManager. There is no soft-delete equivalent here on
+    // purpose - if a patient chose Replace, they want the old rows gone.
     @Query("DELETE FROM glucose_readings")
     suspend fun deleteAll()
 }

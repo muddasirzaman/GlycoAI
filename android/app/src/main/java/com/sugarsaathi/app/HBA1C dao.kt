@@ -26,4 +26,11 @@ interface Hba1cDao {
 
     @Delete
     suspend fun delete(entry: Hba1cEntry)
+
+    /**
+     * Wipes every HbA1c entry. Used only by a REPLACE import in BackupManager.
+     * The per-entry delete on the HbA1c screen still uses delete() above.
+     */
+    @Query("DELETE FROM hba1c_entries")
+    suspend fun deleteAll()
 }

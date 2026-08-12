@@ -503,4 +503,27 @@
     <string name="hba1c_source_lab">Lab</string>
     <string name="hba1c_source_estimated">Estimated</string>
 
+    <!-- Backup & Restore -->
+    <string name="backup_title">Backup &amp; Restore</string>
+    <string name="backup_intro">Save a copy of your glucose readings, HbA1c history, medications and profile to a file on your phone. You can use it to restore later or move to a new device.</string>
+    <string name="backup_warning_title">Your health data will be saved to a file</string>
+    <string name="backup_warning_body">The file contains your medical information, doctor and emergency contact. It is not automatically encrypted. Only share it with people you trust. Chat history is NOT included in the backup.</string>
+    <string name="backup_export_button">Save backup file</string>
+    <string name="backup_import_button">Restore from a file</string>
+    <string name="backup_working">Working…</string>
+    <string name="backup_saved">Backup saved (%1$d items).</string>
+    <string name="backup_save_failed">Could not save the backup. Please try again.</string>
+    <string name="backup_import_bad_file">This file is not a valid GlycoAI backup.</string>
+    <string name="backup_import_found_title">Restore from backup?</string>
+    <string name="backup_import_preview">Found %1$d glucose readings, %2$d HbA1c entries, %3$d medications.</string>
+    <string name="backup_import_includes_profile">The file also includes profile information.</string>
+    <string name="backup_import_exported_at">Exported: %1$s</string>
+    <string name="backup_import_prompt">How should we add these?</string>
+    <string name="backup_import_merge_help">Merge: add anything new, keep everything you already have.</string>
+    <string name="backup_import_replace_help">Replace: delete current readings, medications and HbA1c entries, then load the file. Profile is overwritten.</string>
+    <string name="backup_import_merge">Merge</string>
+    <string name="backup_import_replace">Replace</string>
+    <string name="backup_cancel">Cancel</string>
+    <string name="backup_import_done">Imported: %1$d glucose, %2$d HbA1c, %3$d medications.</string>
+
 </resources>

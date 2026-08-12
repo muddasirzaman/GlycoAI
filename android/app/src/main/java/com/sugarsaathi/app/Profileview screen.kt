@@ -51,6 +51,7 @@ fun ProfileViewScreen(
     onEditSection: (ProfileSection) -> Unit,
     onOpenMedications: () -> Unit,
     onOpenHba1cHistory: () -> Unit
+    onOpenBackup: () -> Unit
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
 
@@ -216,6 +217,14 @@ fun ProfileViewScreen(
             }
 
             Spacer(Modifier.height(24.dp))
+
+            Spacer(Modifier.height(20.dp))
+            OutlinedButton(
+                onClick = onOpenBackup,
+                modifier = Modifier.fillMaxWidth().height(50.dp),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = TealGreen),
+                border = androidx.compose.foundation.BorderStroke(1.dp, TealGreen)
+            ) { Text(stringResource(R.string.backup_title)) }
         }
     }
 }
