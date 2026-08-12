@@ -40,7 +40,10 @@ fun MainTabScreen(
     onChatHistory: () -> Unit,
     onEditProfile: () -> Unit,
     onPrivacy: () -> Unit,
-    onReminders: () -> Unit
+    onReminders: () -> Unit,
+    // Opens the structured-medications list. Handled in MainActivity, same as
+    // onReminders, and surfaced as a card on the Tracker hub below.
+    onMedications: () -> Unit
 ) {
     Scaffold(
         // FIX: ALL bottom inset handling lives here, in exactly one place.
@@ -131,7 +134,8 @@ fun MainTabScreen(
                     onBack = { onTabSelected(0) },
                     onAddReading = onAddReading,
                     onViewReadings = { onTabSelected(2) },
-                    onReminders = onReminders
+                    onReminders = onReminders,
+                    onMedications = onMedications
                 )
                 2 -> GlucoseHistoryScreen(
                     glucoseViewModel = glucoseViewModel,

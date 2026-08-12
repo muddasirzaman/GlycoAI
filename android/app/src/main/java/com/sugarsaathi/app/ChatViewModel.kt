@@ -30,12 +30,21 @@ class ChatViewModel : ViewModel() {
 
     private var profileRepo: ProfileRepository? = null
 
+    // Held so performSend can pull the structured-medication summary out of the
+    // Room database without the UI having to know medications exist. Set in
+    // initProfileRepo, which MainActivity already calls once on startup.
+    private var appContext: Context? = null
+
     fun initHistory(context: Context) {
         historyRepo = ChatHistoryRepository(context)
     }
 
     fun initProfileRepo(context: Context) {
         profileRepo = ProfileRepository(context)
+        // applicationContext: this outlives any single screen and must not
+        // retain an Activity. AppDatabase.getInstance already stores the
+        // application context, so this is consistent with the rest of the app.
+        appContext = context.applicationContext
     }
 
     fun saveCurrentSession() {
@@ -115,9 +124,28 @@ class ChatViewModel : ViewModel() {
     ) {
         viewModelScope.launch {
             try {
+                // Structured medication summary. Fetched here, inside the
+                // coroutine, because MedicationContext.buildSummary is a suspend
+                // DB read. Returns null when the patient has entered no
+                // structured medicines - in which case nothing is added to the
+                // request and the backend behaves exactly as before. The plain
+                // name list on `profile.medications` is sent regardless, so this
+                // only ever ADDS detail, never removes what was already there.
+                val medicationDetail = appContext?.let { ctx ->
+                    try {
+                        MedicationContext.buildSummary(ctx)
+                    } catch (e: Exception) {
+                        // A failure to read medicines must never block a chat
+                        // message. Fall back to sending none - the name list
+                        // still goes through the profile as always.
+                        println("Medication summary failed: ${e.message}")
+                        null
+                    }
+                }
+
                 val history = currentMessages.dropLast(1)
                     .map { mapOf("role" to it.role, "content" to it.content) }
-                val profileData = profile.toApiProfileData(glucoseSummary)
+                val profileData = profile.toApiProfileData(glucoseSummary, medicationDetail)
                 val request = ChatRequest(
                     message = userText, profile = profileData, conversation_history = history,
                     image_data = imageBase64, image_type = imageMimeType,

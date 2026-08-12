@@ -201,6 +201,45 @@
     <string name="enter_medicine_names">Enter medicine name(s)</string>
     <string name="separate_commas_medicine">Separate multiple medicines with commas</string>
 
+    <!-- Medications -->
+    <string name="meds_title">My Medicines</string>
+    <string name="meds_intro">Adding the dose and timing helps GlycoAI give you more specific answers. It will never tell you how much to take — only your doctor can decide that.</string>
+    <string name="med_add">＋  Add Medicine</string>
+    <string name="med_new">Add Medicine</string>
+    <string name="med_edit">Edit Medicine</string>
+    <string name="med_save">Save Medicine</string>
+    <string name="med_empty">No medicines added yet.\nTap Add Medicine to record what you take.</string>
+    <string name="med_delete_title">Delete medicine?</string>
+    <string name="med_delete_confirm">\"%1$s\" will be removed from your list.</string>
+
+    <string name="med_field_name">Medicine name</string>
+    <string name="med_name_hint">e.g. Glucophage</string>
+    <string name="med_field_dose">Dose</string>
+    <string name="med_dose_help">Write it however you know it. Leave blank if you are not sure.</string>
+    <string name="med_dose_hint">e.g. 500mg, 10 units, half tablet</string>
+    <string name="med_field_frequency">How often</string>
+    <string name="med_field_timing">With food</string>
+    <string name="med_field_times">Times of day (optional)</string>
+    <string name="med_times_hint">e.g. morning and night</string>
+    <string name="med_field_notes">Notes (optional)</string>
+    <string name="med_notes_hint">e.g. prescribed by Dr Khan</string>
+    <string name="med_is_insulin">This is an insulin</string>
+    <string name="med_is_insulin_help">GlycoAI is more careful with food and timing advice when you use insulin.</string>
+
+    <string name="med_freq_once">Once a day</string>
+    <string name="med_freq_twice">Twice a day</string>
+    <string name="med_freq_three">Three times a day</string>
+    <string name="med_freq_four">Four times a day</string>
+    <string name="med_freq_as_needed">Only when needed</string>
+    <string name="med_freq_weekly">Once a week</string>
+    <string name="med_freq_other">Other</string>
+
+    <string name="med_timing_before">Before meals</string>
+    <string name="med_timing_with">With meals</string>
+    <string name="med_timing_after">After meals</string>
+    <string name="med_timing_bedtime">At bedtime</string>
+    <string name="med_timing_any">Any time</string>
+
     <!-- Chat screen -->
     <string name="chat_subtitle">Your Daily Diabetes Companion</string>
     <string name="type_question">Type your question…</string>

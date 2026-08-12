@@ -381,4 +381,42 @@
     <string name="rem_type_hba1c">HbA1c ٹیسٹ</string>
     <string name="rem_type_meal">کھانا</string>
 
+    <!-- Medications -->
+    <string name="meds_title">میری ادویات</string>
+    <string name="meds_intro">مقدار اور وقت درج کرنے سے گلائیکو اے آئی زیادہ درست جواب دے سکے گا۔ یہ کبھی نہیں بتائے گا کہ کتنی لینی ہے — یہ صرف آپ کا ڈاکٹر طے کرے گا۔</string>
+    <string name="med_add">＋  دوا شامل کریں</string>
+    <string name="med_new">دوا شامل کریں</string>
+    <string name="med_edit">دوا میں تبدیلی</string>
+    <string name="med_save">محفوظ کریں</string>
+    <string name="med_empty">ابھی کوئی دوا شامل نہیں۔\nاپنی ادویات درج کرنے کے لیے دبائیں۔</string>
+    <string name="med_delete_title">دوا حذف کریں؟</string>
+    <string name="med_delete_confirm">\"%1$s\" آپ کی فہرست سے ہٹا دی جائے گی۔</string>
+
+    <string name="med_field_name">دوا کا نام</string>
+    <string name="med_name_hint">مثلاً Glucophage</string>
+    <string name="med_field_dose">مقدار</string>
+    <string name="med_dose_help">جیسے آپ جانتے ہیں لکھ دیں۔ معلوم نہ ہو تو خالی چھوڑ دیں۔</string>
+    <string name="med_dose_hint">مثلاً 500mg، 10 یونٹ، آدھی گولی</string>
+    <string name="med_field_frequency">کتنی بار</string>
+    <string name="med_field_timing">کھانے کے ساتھ</string>
+    <string name="med_field_times">دن کے اوقات (اختیاری)</string>
+    <string name="med_times_hint">مثلاً صبح اور رات</string>
+    <string name="med_field_notes">نوٹس (اختیاری)</string>
+    <string name="med_notes_hint">مثلاً ڈاکٹر خان نے تجویز کی</string>
+    <string name="med_is_insulin">یہ انسولین ہے</string>
+    <string name="med_is_insulin_help">انسولین استعمال کرنے پر گلائیکو اے آئی کھانے اور وقت کے بارے میں زیادہ احتیاط برتتا ہے۔</string>
+
+    <string name="med_freq_once">دن میں ایک بار</string>
+    <string name="med_freq_twice">دن میں دو بار</string>
+    <string name="med_freq_three">دن میں تین بار</string>
+    <string name="med_freq_four">دن میں چار بار</string>
+    <string name="med_freq_as_needed">صرف ضرورت پر</string>
+    <string name="med_freq_weekly">ہفتے میں ایک بار</string>
+    <string name="med_freq_other">دیگر</string>
+
+    <string name="med_timing_before">کھانے سے پہلے</string>
+    <string name="med_timing_with">کھانے کے ساتھ</string>
+    <string name="med_timing_after">کھانے کے بعد</string>
+    <string name="med_timing_bedtime">سونے سے پہلے</string>
+    <string name="med_timing_any">کسی بھی وقت</string>
 </resources>

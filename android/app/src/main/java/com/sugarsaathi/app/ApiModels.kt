@@ -39,13 +39,31 @@ data class ProfileData(
     val allergies: List<String> = emptyList(),
     val hba1c_date: String? = null,
 
+    // NEW (structured medications): a multi-line human-readable summary of the
+    // patient's active medicines with dose, frequency, timing and insulin flag,
+    // e.g. "- Glucophage 500mg — Twice a day, With meals [insulin]".
+    //
+    // This is ADDITIVE. `medications` above still carries the plain name list
+    // exactly as before, so every existing prompt rule keeps working. When the
+    // patient has entered no structured medicines this is null and the backend
+    // simply omits the block - null, never an empty string, so the prompt never
+    // carries a dangling "Medication details:" header with nothing under it.
+    //
+    // Detail here is for RECOGNITION, not dose advice. The backend refuses dose
+    // and timing guidance regardless of how much detail arrives - see
+    // check_safety() and the MEDICATION DETAIL rule in build_system_prompt().
+    val medication_detail: String? = null,
+
     // Deliberately NOT included: doctor_name, doctor_phone,
     // emergency_contact_name, emergency_contact_phone. Those are contact
     // details, not clinical context - a "can I eat mango" question has no
     // reason to carry a phone number to the backend.
 )
 
-fun UserProfileData.toApiProfileData(glucoseSummary: String? = null): ProfileData {
+fun UserProfileData.toApiProfileData(
+    glucoseSummary: String? = null,
+    medicationDetail: String? = null,
+): ProfileData {
     return ProfileData(
         name = name,
         age = age,
@@ -75,6 +93,7 @@ fun UserProfileData.toApiProfileData(glucoseSummary: String? = null): ProfileDat
         // NEW
         allergies = allergies,
         hba1c_date = hba1cDate,
+        medication_detail = medicationDetail,
     )
 }
 

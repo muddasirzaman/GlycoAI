@@ -100,6 +100,15 @@ class MainActivity : ComponentActivity() {
                 var editingReminder by remember { mutableStateOf<Reminder?>(null) }
                 var addingReminder by remember { mutableStateOf(false) }
                 val reminderViewModel: ReminderViewModel = viewModel()
+
+                // Structured medications. Same shape as the reminder state above:
+                // showMedications drives the list; editing/adding drive the form
+                // that sits on top of it so Back returns to the list.
+                var showMedications by remember { mutableStateOf(false) }
+                var editingMedication by remember { mutableStateOf<Medication?>(null) }
+                var addingMedication by remember { mutableStateOf(false) }
+                val medicationViewModel: MedicationViewModel = viewModel()
+
                 chatVM = chatViewModel
 
                 LaunchedEffect(Unit) {
@@ -113,6 +122,10 @@ class MainActivity : ComponentActivity() {
                     chatViewModel.initProfileRepo(this@MainActivity)
                     glucoseViewModel.init(this@MainActivity)
                     reminderViewModel.init(this@MainActivity)
+                    // Populates the medications table on first run by importing
+                    // the plain names from onboarding. Safe to call every launch:
+                    // the import only runs when the table is empty.
+                    medicationViewModel.init(this@MainActivity)
                 }
 
                 when {
@@ -202,6 +215,29 @@ class MainActivity : ComponentActivity() {
                         )
                     }
 
+                    // Medication add / edit sits above its list, same as
+                    // reminders, so Back returns to the medicines list rather
+                    // than all the way out to the Tracker tab.
+                    addingMedication || editingMedication != null -> {
+                        MedicationEditScreen(
+                            existing = editingMedication,
+                            medicationViewModel = medicationViewModel,
+                            onDone = {
+                                addingMedication = false
+                                editingMedication = null
+                            }
+                        )
+                    }
+
+                    showMedications -> {
+                        MedicationsScreen(
+                            medicationViewModel = medicationViewModel,
+                            onBack = { showMedications = false },
+                            onAdd = { addingMedication = true },
+                            onEdit = { editingMedication = it }
+                        )
+                    }
+
                     showPrivacy -> {
                         PrivacyScreen(
                             onBack = { showPrivacy = false },
@@ -237,7 +273,8 @@ class MainActivity : ComponentActivity() {
                             onChatHistory = { showChatHistory = true },
                             onEditProfile = { showOnboarding = true },
                             onPrivacy = { showPrivacy = true },
-                            onReminders = { showReminders = true }
+                            onReminders = { showReminders = true },
+                            onMedications = { showMedications = true }
                         )
                     }
                 }
