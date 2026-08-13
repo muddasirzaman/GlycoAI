@@ -50,7 +50,7 @@ fun ProfileViewScreen(
     onBack: () -> Unit,
     onEditSection: (ProfileSection) -> Unit,
     onOpenMedications: () -> Unit,
-    onOpenHba1cHistory: () -> Unit
+    onOpenHba1cHistory: () -> Unit,
     onOpenBackup: () -> Unit
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
