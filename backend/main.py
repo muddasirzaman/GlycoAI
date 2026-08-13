@@ -19,7 +19,7 @@ load_dotenv()
 
 app = FastAPI(
     title="GlycoAI API",
-    version="1.3"
+    version="1.1"
 )
 
 client = Anthropic(
@@ -198,18 +198,16 @@ class ProfileData(BaseModel):
 
     glucose_summary: str | None = None
 
-    # Allergies are safety-critical and never filtered out of the prompt.
-    # hba1c_date lets the model treat a stale HbA1c as stale.
+    # NEW - these were being sent by the Android app but silently dropped
+    # because this model didn't declare them. Pydantic ignores unknown
+    # fields by default, so nothing crashed - the data just never arrived.
     allergies: list[str] = Field(default_factory=list)
+
     hba1c_date: str | None = None
 
-    # Structured medication summary (dose, frequency, timing, insulin flag),
-    # one line per active medicine. None when the patient entered no structured
-    # medicines - in which case the block below is skipped entirely.
-    #
-    # This is ADDITIVE to `medications` above (the plain name list), which is
-    # unchanged. Detail here is for RECOGNITION - naming what the patient takes
-    # - NOT for dose advice. check_safety() refuses dosing regardless of this.
+    # Structured, multi-line summary of active medicines (name, dose,
+    # frequency, timing, insulin flag) built by the app's MedicationContext.
+    # Additive only - `medications` above still carries the plain name list.
     medication_detail: str | None = None
 
 
@@ -240,379 +238,117 @@ class ChatRequest(BaseModel):
 # Emergency Detection
 # =====================================================
 
-# =====================================================
-# Text normalisation for safety matching
-# =====================================================
-#
-# Urdu makes naive string matching unreliable:
-#   - Urdu-Indic digits (۰۱۲۳) and Arabic-Indic digits (٠١٢٣) are not ASCII,
-#     so "شوگر ۴۵" contains no digit a plain regex can see
-#   - the same word has several valid spellings (بےہوش / بے ہوش / بیہوش)
-#   - zero-width joiners are invisible but break equality
-#   - Arabic and Urdu letter variants (ي vs ی, ك vs ک) look identical
-#
-# Everything is normalised BEFORE matching. This is the single biggest
-# accuracy gain here - much larger than adding more keywords.
-
-_DIGIT_MAP = {}
-for _i in range(10):
-    _DIGIT_MAP[ord("۰") + _i] = str(_i)   # Urdu-Indic  U+06F0..U+06F9
-    _DIGIT_MAP[ord("٠") + _i] = str(_i)   # Arabic-Indic U+0660..U+0669
-
-# Zero-width non-joiner, zero-width joiner, tatweel, and Arabic diacritics.
-_STRIP_CHARS = dict.fromkeys(
-    [0x200C, 0x200D, 0x200E, 0x200F, 0x0640, 0x0670]
-    + list(range(0x064B, 0x0660))
-)
-
-# Letter variants that render alike but are distinct code points.
-_LETTER_MAP = {
-    ord("ي"): "ی", ord("ى"): "ی",
-    ord("ك"): "ک",
-    ord("ه"): "ہ", ord("ۂ"): "ہ", ord("ة"): "ہ",
-    ord("أ"): "ا", ord("إ"): "ا", ord("آ"): "ا", ord("ٱ"): "ا",
-    ord("ؤ"): "و",
-    ord("ئ"): "ی",
-}
-
-
-def normalize_for_safety(text: str) -> str:
-    """Fold a message into a form that keyword matching can rely on."""
-    if not text:
-        return ""
-    t = text.translate(_DIGIT_MAP).translate(_STRIP_CHARS).translate(_LETTER_MAP)
-    t = t.lower()
-    t = re.sub(r"\s+", " ", t)
-    return t.strip()
-
-
-def _spaceless(text: str) -> str:
-    """Space-free copy, so 'بے ہوش' and 'بےہوش' both match one entry."""
-    return re.sub(r"\s+", "", text)
-
-
-# =====================================================
-# Emergency Detection
-# =====================================================
-#
-# URDU TERMS BELOW ARE GLOSSED IN ENGLISH - PLEASE HAVE A NATIVE SPEAKER
-# VERIFY THEM. A wrong term here means a real emergency is missed.
-
 EMERGENCY_WORDS = [
-    # --- English ---
-    "unconscious", "passed out", "not breathing", "can't breathe",
-    "cant breathe", "difficulty breathing", "struggling to breathe",
-    "seizure", "fitting", "convulsion", "stroke", "heart attack",
-    "chest pain", "collapse", "collapsed", "unresponsive",
-    "won't wake", "wont wake", "not waking",
-
-    # --- Roman Urdu (spelling varies a lot in practice) ---
-    "behosh", "behoash", "bayhosh", "be hosh", "behoshi",
-    "hosh nahi", "hosh nhi", "hosh me nahi",
-    "saans nahi", "sans nahi", "saans nhi", "saans nahin",
-    "saans lene me", "sans lene me",
-    "dora par", "daura par", "dorra", "mirgi",
-    "jhatke", "jhatkay",
-    "seene me dard", "seene mein dard", "chaati me dard",
-    "dil ka dora", "dil ka daura",
-    "falij", "faalij",
-    "gir gaya", "gir gai", "gir gayi",
-    "jaag nahi", "jaag nhi", "uth nahi raha",
-    "hospital le ja", "ambulance",
-
-    # --- Urdu script ---
-    "بیہوش",          # unconscious
-    "بےہوش",          # unconscious (yeh barree spelling)
-    "بہوش",           # unconscious (common typo form)
-    "ہوش نہیں",       # not conscious
-    "ہوش میں نہیں",   # not in consciousness
-    "سانس نہیں",      # not breathing
-    "سانس لینے میں",  # difficulty in breathing
-    "دورہ پڑ",        # a fit/seizure struck (collocation avoids "دورہ" = visit)
-    "مرگی",           # epilepsy / fit
-    "جھٹکے",          # convulsions
-    "سینے میں درد",   # chest pain
-    "چھاتی میں درد",  # chest pain (alt)
-    "دل کا دورہ",     # heart attack
-    "فالج",           # stroke / paralysis
-    "گر گیا",         # collapsed / fell
-    "گر گئی",         # collapsed / fell (feminine)
-    "جاگ نہیں",       # not waking
-    "اٹھ نہیں رہا",   # not getting up
-    "ایمبولینس",      # ambulance
-    "ہسپتال لے جا",   # take to hospital
+    "unconscious",
+    "passed out",
+    "not breathing",
+    "can't breathe",
+    "cant breathe",
+    "difficulty breathing",
+    "seizure",
+    "fitting",
+    "stroke",
+    "heart attack",
+    "chest pain",
+    "collapse",
+    "collapsed",
+    # Roman Urdu
+    "behosh",
+    "be hosh",
+    "behoshi",
+    "saans nahi",
+    "dora par",
+    "gir gaya",
+    "gir gayi",
 ]
 
 DOSING_WORDS = [
-    # --- English ---
-    "how many units", "how much insulin", "increase insulin",
-    "reduce insulin", "insulin dose", "change insulin", "adjust insulin",
-    "stop taking", "should i stop", "double my dose", "skip my dose",
-    "how much metformin", "increase my dose", "decrease my dose",
-
-    # --- Roman Urdu ---
-    "dose bata", "dose batao", "kitni insulin", "insulin kitni",
-    "kitni units", "kitna dose", "dawa band", "dawai band",
-
-    # --- Urdu script ---
-    "کتنی انسولین",   # how much insulin
-    "انسولین کتنی",   # insulin how much
-    "کتنے یونٹ",      # how many units
-    "خوراک بتا",      # tell me the dose
-    "ڈوز بتا",        # tell me the dose (borrowed)
-    "دوا بند",        # stop the medicine
-    "دوائی بند",      # stop the medicine
-    "دوا بڑھا",       # increase the medicine
-    "دوا کم",         # reduce the medicine
-]
-
-# Pre-compute space-free forms once, so both spacing styles match.
-_EMERGENCY_NORM = [(normalize_for_safety(w), _spaceless(normalize_for_safety(w)))
-                   for w in EMERGENCY_WORDS]
-_DOSING_NORM = [(normalize_for_safety(w), _spaceless(normalize_for_safety(w)))
-                for w in DOSING_WORDS]
-
-# =====================================================
-# Centralised glucose thresholds
-# =====================================================
-# Single source of truth for the backend. Mirrors isUrgentReading() and
-# suggestionFor() in Glucosesuggestion.kt so the Tracker tab and the chat can
-# never disagree about the same reading. A clinician should review these.
-#
-# mg/dL is canonical; mmol/L is converted before comparison.
-GLUCOSE_SEVERE_LOW_MGDL = 54
-GLUCOSE_LOW_MGDL = 70
-GLUCOSE_HIGH_MGDL = 400
-
-# Symptoms that turn a borderline number into an urgent one. A reading of 65
-# alone is a hypo to treat at home; 65 with confusion is not.
-SEVERE_SYMPTOM_WORDS = [
-    # English
-    "confus", "can't think", "cant think", "disoriented", "slurring",
-    "slurred", "shaking", "sweating heavily", "cold sweat", "vomit",
-    "throwing up", "can't wake", "cant wake", "unconscious", "passed out",
-    "not breathing", "difficulty breathing", "seizure", "chest pain",
-    "collapse", "dizzy", "dizziness", "lightheaded", "light-headed",
-    "faint", "fainting", "blurred vision", "very weak", "can't stand",
+    "how many units",
+    "how much insulin",
+    "increase insulin",
+    "reduce insulin",
+    "insulin dose",
+    "change insulin",
+    "adjust insulin",
+    "stop taking",
+    "should i stop",
+    "double my dose",
+    "skip my dose",
     # Roman Urdu
-    "chakkar", "ghabrahat", "pasina", "ulti", "kamzori", "behosh",
-    "nazar dhundli",
-    # Urdu script
-    "چکر",          # dizziness
-    "الٹی",         # vomiting
-    "پسینہ",        # sweating
-    "کمزوری",       # weakness
-    "گھبراہٹ",      # palpitations / anxiety
-    "دھندلا",       # blurred
-    "ہوش نہیں",     # not conscious
-    "کانپ",         # shaking / trembling
+    "dose bata",
+    "dose batao",
+    "kitni insulin",
+    "insulin kitni",
+    "kitni units",
 ]
 
-
-# Glucose values, matched as whole numbers so "sugar 300" is never mistaken
-# for "sugar 30". Urdu terms included; digits are already normalised to ASCII
-# by the time this runs.
+# Glucose values that are genuinely critical, matched as whole numbers so
+# "sugar 300" is never mistaken for "sugar 30".
 GLUCOSE_PATTERN = re.compile(
-    r"(?:sugar|glucose|bsl|reading|shugar|sheeta|"
-    r"شوگر|گلوکوز|شکر\s*لیول|ریڈنگ)"
-    r"\D{0,14}(\d{1,4})(?!\d)",
-    re.IGNORECASE | re.UNICODE,
+    r"(?:sugar|glucose|bsl|reading|sheeta|shugar)\D{0,12}(\d{1,4})(?!\d)(?:\.\d+)?",
+    re.IGNORECASE,
 )
-
-# These bypass the model entirely, so each must carry its own translation -
-# otherwise an Urdu-speaking user gets English-only instructions at the exact
-# moment comprehension matters most. Both languages are always shown: at this
-# point the priority is that SOMEONE nearby can read it.
 
 EMERGENCY_RESPONSE = (
-    "This may be a medical emergency. Call 1122 now, or go to the nearest "
-    "hospital immediately.\n\n"
-    "If the person is awake and able to swallow, and their sugar is low, give "
-    "them something sweet right away - juice, a regular soft drink, or sugar "
-    "in water. Do NOT put anything in their mouth if they are drowsy or "
-    "unconscious.\n\n"
-    "یہ ہنگامی طبی صورتحال ہو سکتی ہے۔ ابھی 1122 پر کال کریں یا قریبی ہسپتال "
-    "لے جائیں۔\n\n"
-    "اگر مریض ہوش میں ہے اور نگل سکتا ہے، اور شوگر کم ہے، تو فوراً کچھ میٹھا "
-    "دیں - جوس، عام مشروب، یا پانی میں چینی۔ اگر وہ غنودگی میں ہے یا بےہوش ہے "
-    "تو منہ میں کچھ نہ ڈالیں۔"
+    "This may be a medical emergency. Please call your local emergency "
+    "services (1122 in Pakistan) or go to the nearest hospital immediately.\n\n"
+    "If the person is conscious and able to swallow, and their sugar is low, "
+    "give them something sweet right away - juice, regular soft drink, or "
+    "sugar dissolved in water. Do not give anything by mouth if they are "
+    "drowsy or unconscious."
 )
 
-# Unlike the emergency text, this is shown in ONE language only. The emergency
-# response is bilingual because whoever is holding the phone may not be the
-# patient, and comprehension matters more than length. A dosing refusal has no
-# such urgency - doubling its length just makes it harder to read.
-DOSING_RESPONSE_EN = (
-    "I can't work out insulin or medicine doses - that has to come from your "
-    "own doctor, because it depends on tests and details only they can see.\n\n"
-    "Please follow the instructions you were given, and contact your doctor if "
-    "you think something needs to change. If you feel unwell right now and are "
-    "unsure what to do, treat it as urgent and seek care."
-)
-
-DOSING_RESPONSE_UR = (
-    "میں انسولین یا دوا کی مقدار نہیں بتا سکتا - یہ صرف آپ کا ڈاکٹر ہی طے کر "
-    "سکتا ہے، کیونکہ اس کا انحصار ان ٹیسٹوں اور تفصیلات پر ہے جو صرف وہ "
-    "دیکھ سکتے ہیں۔\n\n"
-    "آپ کو جو ہدایات دی گئی ہیں ان پر عمل کریں، اور اگر آپ کو لگتا ہے کہ کچھ "
-    "بدلنے کی ضرورت ہے تو اپنے ڈاکٹر سے رابطہ کریں۔ اگر ابھی طبیعت ٹھیک نہیں "
-    "اور سمجھ نہ آ رہا ہو کہ کیا کریں، تو اسے فوری سمجھیں اور مدد لیں۔"
+DOSING_RESPONSE = (
+    "I cannot recommend or calculate insulin or medication doses - that has to "
+    "come from your own doctor, because it depends on tests and details only "
+    "they can assess.\n\n"
+    "Please follow the instructions you were given, and contact your "
+    "healthcare provider if you think something needs to change. If you are "
+    "unwell right now and unsure what to do, treat it as urgent and seek care."
 )
 
 
-def check_safety(message: str, glucose_unit: str = "mg/dL", language: str = "en"):
-    """Hard safety gate that runs before the model sees anything.
+def check_safety(message: str, glucose_unit: str = "mg/dL"):
+    """Hard safety gate that runs before the model sees anything."""
 
-    This is a FAST PATH, not the only line of defence. Keyword matching cannot
-    cover every way a person might describe an emergency, especially across two
-    languages and two scripts. The system prompt makes the model responsible for
-    catching what this misses, and parse_model_reply enforces that an emergency
-    reply never asks a clarifying question.
-    """
+    message_lower = message.lower()
 
-    norm = normalize_for_safety(message)
-    norm_nospace = _spaceless(norm)
+    for word in EMERGENCY_WORDS:
+        if word in message_lower:
+            return {"blocked": True, "response": EMERGENCY_RESPONSE}
 
-    for word, word_nospace in _EMERGENCY_NORM:
-        if word and (word in norm or word_nospace in norm_nospace):
-            return {"blocked": True, "response": EMERGENCY_RESPONSE, "tier": "emergency"}
-
-    # Computed once: used to escalate borderline readings below.
-    has_symptom = any(
-        normalize_for_safety(w) in norm for w in SEVERE_SYMPTOM_WORDS
-    )
-
-    # Numeric glucose check. Digits are ASCII by now, whatever script was typed.
-    for match in GLUCOSE_PATTERN.finditer(norm):
+    # Numeric glucose check, unit-aware and boundary-safe.
+    for match in GLUCOSE_PATTERN.finditer(message_lower):
         try:
             value = int(match.group(1))
         except (TypeError, ValueError):
             continue
 
-        # Convert to mg/dL once, then reason in one unit only.
         if glucose_unit == "mmol/L":
-            mgdl = value * 18
-            # A 1-2 digit number under an mmol/L profile is genuinely mmol/L.
-            if value > 45:
-                continue
+            # mmol/L: below 3 or above 25 warrants urgent care
+            if value <= 3 or value >= 25:
+                return {"blocked": True, "response": EMERGENCY_RESPONSE}
         else:
-            mgdl = float(value)
+            # mg/dL: a 1-2 digit number here is almost always mmol/L or a typo,
+            # so only act on clearly critical mg/dL values.
+            # Upper bound is 400 to match the app's own "very high" threshold in
+            # GlucoseSuggestions.kt - the Tracker tab and the chat must not
+            # disagree about whether the same reading is an emergency.
+            if 20 <= value <= 54 or value >= 400:
+                return {"blocked": True, "response": EMERGENCY_RESPONSE}
 
-        # Symptoms turn a borderline reading into an urgent one. 65 alone is a
-        # hypo to treat at home; 65 with confusion is not.
-        if mgdl <= GLUCOSE_SEVERE_LOW_MGDL:
-            return {"blocked": True, "response": EMERGENCY_RESPONSE, "tier": "emergency"}
+    for word in DOSING_WORDS:
+        if word in message_lower:
+            return {"blocked": True, "response": DOSING_RESPONSE}
 
-        if mgdl < GLUCOSE_LOW_MGDL and has_symptom:
-            return {"blocked": True, "response": EMERGENCY_RESPONSE, "tier": "emergency"}
-
-        if mgdl >= GLUCOSE_HIGH_MGDL:
-            return {"blocked": True, "response": EMERGENCY_RESPONSE, "tier": "emergency"}
-
-    for word, word_nospace in _DOSING_NORM:
-        if word and (word in norm or word_nospace in norm_nospace):
-            return {
-                "blocked": True,
-                "response": DOSING_RESPONSE_UR if language == "ur" else DOSING_RESPONSE_EN,
-                "tier": "prescribing",
-            }
-
-    return {"blocked": False, "response": None, "tier": None}
-
-
-
-# =====================================================
-# Minimum-necessary context
-# =====================================================
-#
-# Decides which profile CATEGORIES a given message actually needs, so the
-# system prompt carries only what the question requires instead of the full
-# medical record on every turn.
-#
-# Deliberately keyword-based rather than an LLM call: auditable (you can see
-# exactly why a category fired), no added latency or cost, and it cannot
-# silently misjudge relevance the way a model classification could.
-#
-# ALWAYS-ON, never filtered:
-#   - allergies      (a keyword miss here is a safety gap, not a privacy win)
-#   - known_facts    (exist precisely so the model stops re-asking)
-#   - conditions     (kidney / heart / BP / pregnancy gate the mandatory food
-#                     safety rules; omitting them is the dangerous direction)
-
-MEDICATION_KEYWORDS = [
-    "medicine", "medication", "drug", "pill", "tablet", "dose", "dosage",
-    "insulin", "metformin", "glucophage", "side effect", "prescription",
-    "dawa", "dawai", "goli",
-    "دوا", "دوائی", "گولی", "انسولین", "خوراک",
-]
-
-HBA1C_KEYWORDS = [
-    "hba1c", "a1c", "average glucose", "test result", "lab result",
-    "ٹیسٹ", "رپورٹ", "نتیجہ",
-]
-
-COMPLICATION_KEYWORDS = [
-    "complication", "nerve", "eye", "foot", "retinopathy", "neuropathy",
-    "nephropathy", "vision", "wound", "ulcer", "numbness",
-    "aankh", "paon", "zakhm", "sunn",
-    "آنکھ", "پاؤں", "زخم", "سن", "نظر", "اعصاب",
-]
-
-GLUCOSE_KEYWORDS = [
-    "sugar", "glucose", "reading", "level", "fasting", "spike", "high",
-    "low", "trend", "cgm", "meter", "shuger",
-    "shugar", "sheeta", "nashta se pehle",
-    "شوگر", "گلوکوز", "ریڈنگ", "لیول", "نہار", "روزہ",
-]
-
-PHYSICAL_KEYWORDS = [
-    "weight", "bmi", "diet", "exercise", "smoke", "smoking", "obese",
-    "walk", "gym", "workout", "food", "eat", "meal",
-    "wazan", "khana", "warzish", "chalna", "sigret",
-    "وزن", "کھانا", "ورزش", "چہل", "سگریٹ", "کھا", "پی",
-]
-
-# Personal-advice phrasing under-triggers on keywords alone: "what should I
-# eat" hits nothing specific yet clearly depends on the whole clinical picture.
-PERSONALIZED_ADVICE_KEYWORDS = [
-    "should i", "can i", "is it safe", "what about", "advice",
-    "recommend", "help me", "what should", "for me",
-    "kya main", "kya mujhe", "mere liye", "kar sakta", "kha sakta",
-    "کیا میں", "کیا مجھے", "میرے لیے", "سکتا ہوں", "سکتی ہوں", "مشورہ",
-]
-
-
-def classify_relevant_categories(message: str) -> set[str]:
-    """Which profile categories this message needs. Conditions are always in."""
-    m = normalize_for_safety(message)
-
-    # Never gated - see note above.
-    categories: set[str] = {"conditions"}
-
-    if any(normalize_for_safety(k) in m for k in MEDICATION_KEYWORDS):
-        categories.add("medications")
-    if any(normalize_for_safety(k) in m for k in HBA1C_KEYWORDS):
-        categories.add("hba1c")
-    if any(normalize_for_safety(k) in m for k in COMPLICATION_KEYWORDS):
-        categories.add("complications")
-    if any(normalize_for_safety(k) in m for k in GLUCOSE_KEYWORDS):
-        categories.add("glucose")
-    if any(normalize_for_safety(k) in m for k in PHYSICAL_KEYWORDS):
-        categories.add("physical")
-
-    if any(normalize_for_safety(k) in m for k in PERSONALIZED_ADVICE_KEYWORDS):
-        categories.update({
-            "medications", "hba1c", "complications", "glucose", "physical"
-        })
-
-    return categories
+    return {"blocked": False, "response": None}
 
 
 # =====================================================
 # System Prompt Builder
 # =====================================================
 
-def build_system_prompt(profile: ProfileData, relevant: set[str]) -> str:
+def build_system_prompt(profile: ProfileData) -> str:
 
     prompt = """
 You are GlycoAI, an AI diabetes education assistant designed for Pakistani patients.
@@ -777,52 +513,38 @@ NOT render Markdown tables, headings, or pipe characters. Follow these rules:
 
     prompt += f"Diagnosis Year: {profile.diagnosis_year or 'Unknown'}\n"
 
-    prompt += f"Glucose Unit: {profile.glucose_unit}\n"
-
-    # Allergies: ALWAYS included. A keyword miss here would be a safety gap,
-    # not a privacy win - the food rules below depend on it being present.
+    # NEW: allergies - placed prominently and phrased as a hard constraint,
+    # not just a data point, since missing this is a real safety failure.
     if profile.allergies:
-        prompt += f"\nALLERGIES: {', '.join(profile.allergies)}\n"
+        prompt += f"\n⚠️ ALLERGIES: {', '.join(profile.allergies)}\n"
         prompt += (
-            "CRITICAL: never recommend any food, ingredient or medicine that "
-            "matches or contains one of these. If a question touches an "
-            "ingredient close to an allergy, name the conflict explicitly "
-            "rather than quietly avoiding it.\n\n"
+            "CRITICAL: Never recommend any food, ingredient, or medicine that "
+            "matches or contains one of these allergens. If a food question "
+            "touches on an ingredient close to an allergy, name the conflict "
+            "explicitly rather than silently avoiding it.\n\n"
         )
 
-    if "medications" in relevant:
-        prompt += f"Insulin Type: {profile.insulin_type or 'Unknown'}\n"
-        prompt += f"Current Medicines: {', '.join(profile.medications) if profile.medications else 'None'}\n"
+    prompt += f"Insulin Type: {profile.insulin_type or 'Unknown'}\n"
 
-        # Structured detail, when the patient has entered it. Gated by the SAME
-        # "medications" relevance check as the name list above, so a question
-        # like "what is HbA1c?" carries neither. The rule that follows is the
-        # important part: this detail lets the model be SPECIFIC about what the
-        # patient takes, and must never become permission to advise on doses or
-        # timing. More context tightens caution here - it never loosens it.
-        if profile.medication_detail:
-            prompt += (
-                "\nMEDICATION DETAILS (patient-entered):\n"
-                f"{profile.medication_detail}\n"
-                "\nHOW TO USE THIS:\n"
-                "- You MAY name what they take, to be specific and reassuring "
-                "(\"I can see you're on Glucophage 500mg twice daily\").\n"
-                "- You MUST NOT tell them what dose to take, whether to take a "
-                "missed dose, whether to double up, or how to time it around "
-                "food or other medicines. That is dose advice - refuse it and "
-                "send them to their doctor or pharmacist, exactly as you would "
-                "if this detail were absent.\n"
-                "- A [insulin] tag means treat food and timing questions with "
-                "extra caution: portions are governed by carb counting and "
-                "their own insulin plan, never a fixed number.\n"
-                "- This is patient-reported, not a verified prescription. If it "
-                "looks wrong or conflicts with what they now say, trust the "
-                "conversation and suggest they confirm with their doctor.\n"
-            )
+    prompt += f"Glucose Unit: {profile.glucose_unit}\n"
 
-    if "glucose" in relevant:
-        prompt += f"Glucose Monitoring: {profile.glucose_monitoring or 'Unknown'}\n"
-        prompt += f"Previous Severe Hypoglycemia: {profile.severe_hypoglycemia or 'Unknown'}\n"
+    prompt += f"Current Medicines: {', '.join(profile.medications) if profile.medications else 'None'}\n"
+
+    # NEW: structured medication detail, when the patient has entered any
+    # medicines in the dedicated Medications section. Additive to the plain
+    # name list above - never replaces it.
+    if profile.medication_detail:
+        prompt += f"\nMedication Detail:\n{profile.medication_detail}\n"
+        prompt += (
+            "This detail is for recognizing what the patient takes and when - "
+            "it is NOT permission to advise on doses or timing changes. "
+            "Continue to direct all dosing questions to their doctor "
+            "regardless of how much detail is shown here.\n"
+        )
+
+    prompt += f"Glucose Monitoring: {profile.glucose_monitoring or 'Unknown'}\n"
+
+    prompt += f"Previous Severe Hypoglycemia: {profile.severe_hypoglycemia or 'Unknown'}\n"
 
     # Conditions and complications come from one onboarding screen, so treat
     # them as a single combined list everywhere.
@@ -830,17 +552,18 @@ NOT render Markdown tables, headings, or pipe characters. Follow these rules:
 
     prompt += f"Other Medical Conditions: {', '.join(all_conditions) if all_conditions else 'None'}\n"
 
-    if "hba1c" in relevant:
-        if profile.hba1c is not None:
-            line = f"HbA1c: {profile.hba1c}%"
-            line += (f" (measured {profile.hba1c_date})" if profile.hba1c_date
-                     else " (measurement date unknown - may be outdated)")
-            prompt += line + "\n"
+    if profile.hba1c is not None:
+        hba1c_line = f"HbA1c: {profile.hba1c}%"
+        if profile.hba1c_date:
+            hba1c_line += f" (measured {profile.hba1c_date})"
         else:
-            prompt += "HbA1c: Not recorded\n"
+            hba1c_line += " (date of measurement unknown - treat as possibly outdated)"
+        prompt += hba1c_line + "\n"
+    else:
+        prompt += "HbA1c: Not recorded\n"
 
     # BMI calculation
-    if "physical" in relevant and profile.weight_kg and profile.height_cm and profile.height_cm > 0:
+    if profile.weight_kg and profile.height_cm and profile.height_cm > 0:
         height_m = profile.height_cm / 100
         bmi = profile.weight_kg / (height_m * height_m)
         bmi_rounded = round(bmi, 1)
@@ -860,12 +583,12 @@ NOT render Markdown tables, headings, or pipe characters. Follow these rules:
                    "gently and without shaming. Focus on health, not appearance.\n")
 
     # Smoking
-    if "physical" in relevant and profile.smoking_status == "Current":
+    if profile.smoking_status == "Current":
         prompt += ("PATIENT SMOKES: Smoking sharply raises cardiovascular and "
                    "kidney risk in diabetes. Where relevant, gently encourage "
                    "quitting and mention local support exists - but do not lecture "
                    "or repeat it in every answer.\n")
-    elif "physical" in relevant and profile.smoking_status == "Former":
+    elif profile.smoking_status == "Former":
         prompt += "Patient is a former smoker - acknowledge this positively if it comes up.\n"
 
     prompt += "=====================================\n"
@@ -874,7 +597,7 @@ NOT render Markdown tables, headings, or pipe characters. Follow these rules:
     # Glucose history
     # -------------------------------------------------
 
-    if "glucose" in relevant and profile.glucose_summary:
+    if profile.glucose_summary:
         prompt += f"""
 ========== GLUCOSE HISTORY ==========
 {profile.glucose_summary}
@@ -959,41 +682,11 @@ Answer immediately and fully. needs_context MUST be false.
 NEVER ask a clarifying question first. Tell them what to do right now and to
 seek urgent care. Safety before information gathering, always.
 
-YOU ARE THE PRIMARY EMERGENCY DETECTOR.
-A keyword filter runs before you, but it only catches phrasings someone
-anticipated. It WILL miss things - especially in Urdu, where the same word has
-several spellings, and in Roman Urdu, where spelling is not standardised.
-Do not assume that a message reaching you has already been cleared as safe.
-
-Read every message for danger in whatever language and script it arrives in.
-Treat as EMERGENCY, regardless of wording:
-  - loss or clouding of consciousness, not waking, unresponsiveness
-    (بیہوش، ہوش نہیں، جاگ نہیں رہا، behosh, hosh nahi)
-  - difficulty breathing (سانس نہیں آ رہی، saans nahi)
-  - seizure or convulsions (دورہ، مرگی، جھٹکے، daura, mirgi)
-  - chest pain (سینے میں درد، seene me dard)
-  - one-sided weakness, slurred speech, sudden confusion (فالج، falij)
-  - repeated vomiting alongside high sugar - possible ketoacidosis
-  - glucose at or below 54 mg/dL (3 mmol/L), or at or above 400 mg/dL
-    (22 mmol/L), whether written in Western digits or Urdu digits (۰-۹)
-  - a caregiver describing any of the above happening to someone else
-
-Err toward treating it as an emergency. Telling someone to seek urgent care
-when they did not strictly need to costs them a wasted trip. Failing to tell
-them when they did need to can cost far more.
-
 TIER: PRESCRIBING
 needs_context MUST be false. Never give a dose, never suggest starting,
 stopping, or changing a medicine - no matter how much detail they provide.
 More context NEVER unlocks dose advice. Explain warmly why you cannot, and
 direct them to their doctor.
-
-This applies EVEN when MEDICATION DETAILS above show the exact drug, dose and
-schedule. Seeing "Glucophage 500mg twice daily" lets you NAME it back to them;
-it does NOT let you answer "I missed it, should I take it now?" or "can I take
-two?". Those are dosing questions. Name what you can see, then refuse the dose
-part and route to their doctor or pharmacist. A missed insulin dose is the most
-dangerous case - never advise on it.
 
 TIER: EDUCATION
 Answer directly. needs_context is false. Nothing personal is required to
@@ -1455,6 +1148,8 @@ async def get_tips(request: TipsRequest, uid: str = Depends(current_uid)):
         context += f" Recent glucose: {p.glucose_summary}"
     if p.smoking_status == "Current":
         context += " Patient currently smokes."
+    if p.allergies:
+        context += f" Allergies: {', '.join(p.allergies)} - never suggest these."
 
     language_note = "Write in Urdu script." if p.language == "ur" else "Write in simple English."
 
@@ -1524,7 +1219,7 @@ def health():
     return {
         "status": "running",
         "app": "GlycoAI",
-        "version": "1.3",
+        "version": "1.2",
         "language": "English / urdu",
         "auth_required": REQUIRE_AUTH,
         "auth_ready": _firebase_ready,
@@ -1550,11 +1245,7 @@ async def chat(request: ChatRequest, uid: str = Depends(current_uid)):
     # Safety Check
     # ---------------------------------------------
 
-    safety = check_safety(
-        request.message,
-        request.profile.glucose_unit,
-        request.profile.language,
-    )
+    safety = check_safety(request.message, request.profile.glucose_unit)
 
     if safety["blocked"]:
         return {
@@ -1562,24 +1253,14 @@ async def chat(request: ChatRequest, uid: str = Depends(current_uid)):
             "safety_triggered": True,
             "needs_context": False,
             "quick_replies": [],
-            # Pass the real tier through. Hardcoding "emergency" here made a
-            # dosing refusal render as a red emergency card - a false alarm on
-            # a routine question, which is exactly what erodes trust in the
-            # ones that matter.
-            "tier": safety.get("tier", "emergency"),
+            "tier": "emergency",
         }
 
     # ---------------------------------------------
     # Build Claude System Prompt
     # ---------------------------------------------
 
-    relevant = classify_relevant_categories(request.message)
-    system_prompt = build_system_prompt(request.profile, relevant)
-
-    # Log the relevance decision only - never the profile itself. Writing
-    # allergies, HbA1c and medications into Railway's logs on every message
-    # would be storing PHI in a place nobody is auditing.
-    print(f"=== CONTEXT: {sorted(relevant)} ===")
+    system_prompt = build_system_prompt(request.profile)
 
     messages = list(request.conversation_history[-MAX_HISTORY:])
 
@@ -1667,7 +1348,6 @@ async def chat(request: ChatRequest, uid: str = Depends(current_uid)):
 
             messages=messages,
 
-            # Nudges the model straight into the JSON object.
             stop_sequences=[]
         )
 
