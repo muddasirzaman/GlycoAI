@@ -3,7 +3,7 @@
 
     <string name="step_progress">مرحلہ %1$d از %2$d</string>
     <string name="daily_tips_title">💡 آج کا مشورہ</string>
-    <string name="developed_in_collaboration">کے اشتراک سے تیار کیا گیا</string>
+    <string name="developed_in_collaboration">تیار کردہ</string>
     <string name="i_understand">میں سمجھ گیا/گئی</string>
 
     <!-- Login -->
@@ -49,7 +49,7 @@
     <string name="consent_point_doctor">یہ آپ کے ڈاکٹر کا متبادل نہیں۔ ہمیشہ ان کی ہدایات پر عمل کریں۔</string>
     <string name="consent_point_emergency">ہنگامی صورت میں فوراً 1122 پر کال کریں یا قریبی ہسپتال جائیں۔ یہاں جواب کا انتظار نہ کریں۔</string>
     <string name="consent_privacy_title">آپ کی معلومات کے بارے میں</string>
-    <string name="consent_privacy_body">آپ کی پروفائل اور ریڈنگز اسی فون میں محفوظ ہیں۔ جب آپ پیغام بھیجتے ہیں تو وہ ہمارے محفوظ سرور اور Anthropic کو جاتا ہے، جس کا اے آئی جواب لکھتا ہے۔ چیٹ میں اپنا شناختی کارڈ نمبر، پتہ یا بینک تفصیلات شیئر نہ کریں۔</string>
+    <string name="consent_privacy_body">آپ کی پروفائل اور ریڈنگز اسی ڈیوائس میں محفوظ کی جاتی ہیں۔ جب آپ کوئی پیغام بھیجتے ہیں تو وہ محفوظ طریقے سے ہمارے کلاؤڈ سرور پر بھیجا جاتا ہے، جہاں AI جواب تیار کرتا ہے۔ GlycoAI ذیابیطس کے مریضوں کی مدد کے لیے تیار کیا گیا ایک AI پر مبنی معاون نظام ہے۔ اسے انجینئر غلام مصطفیٰ نے PCSIR لیبارٹریز کمپلیکس، کراچی میں تیار کیا ہے۔ اپنی حفاظت کے لیے، براہِ کرم چیٹ میں اپنا شناختی کارڈ نمبر، پتہ یا بینک کی تفصیلات شیئر نہ کریں۔ یاد رکھیں کہ AI بعض اوقات غلط معلومات بھی فراہم کر سکتا ہے، اس لیے اہم تفصیلات کی دوبارہ تصدیق ضرور کر لیں۔</string>
     <string name="consent_checkbox">میں نے یہ پڑھ اور سمجھ لیا ہے۔ میں سمجھتا ہوں کہ گلائیکو اے آئی میرے ڈاکٹر کا متبادل نہیں۔</string>
     <string name="consent_agree_button">میں متفق ہوں — جاری رکھیں</string>
     <string name="chat_disclaimer_footer">گلائیکو اے آئی عام معلومات دیتا ہے، طبی مشورہ نہیں۔ ہنگامی صورت میں 1122 پر کال کریں۔</string>
@@ -184,6 +184,10 @@
     <string name="separate_commas_condition">ایک سے زیادہ حالات کوما سے الگ کریں</string>
 
     <!-- Health metrics -->
+    <string name="profile_language_display">English / Urdu</string>
+    <string name="height_feet">فٹ</string>
+    <string name="height_inches">انچ</string>
+    <string name="field_height">Height</string>
     <string name="weight_kg">وزن کلوگرام میں</string>
     <string name="height_cm">قد سینٹی میٹر میں</string>
     <string name="weight_hint">مثلاً 72</string>
@@ -199,6 +203,16 @@
     <string name="med_other">دیگر</string>
     <string name="enter_medicine_names">دوا کا نام درج کریں</string>
     <string name="separate_commas_medicine">ایک سے زیادہ ادویات کوما سے الگ کریں</string>
+
+    <string name="response_concise_desc">مختصر اور براہ راست جوابات</string>
+    <string name="response_medium_desc">متوازن وضاحت</string>
+    <string name="response_detailed_desc">زیادہ سیاق و سباق کے ساتھ تفصیلی</string>
+
+    <!-- Response length -->
+    <string name="response_length_label">جواب کی لمبائی</string>
+    <string name="response_concise">مختصر</string>
+    <string name="response_medium">متوازن</string>
+    <string name="response_detailed">تفصیلی</string>
 
     <!-- Chat screen -->
     <string name="chat_subtitle">آپ کا روزانہ ذیابیطس ساتھی</string>
@@ -332,7 +346,7 @@
     <string name="sugg_slightly_high_title">🟡 تھوڑی زیادہ</string>
     <string name="sugg_slightly_high_1">ہدف سے تھوڑی زیادہ — ایسا سب کے ساتھ ہوتا ہے۔ پانی پئیں 💧، اور اگر طبیعت ٹھیک ہو تو تھوڑی چہل قدمی مدد دے سکتی ہے۔ 🚶</string>
     <string name="sugg_slightly_high_2">اس وقت تھوڑی زیادہ ہے۔ پانی پیتے رہیں، میٹھی چیزوں سے پرہیز کریں، اور دوائیں وقت پر لیں۔</string>
-    <string name="sugg_slightly_high_3">یہ ریڈنگ ہدف سے کچھ زیادہ ہے۔ اکیلی ریڈنگ پریشانی کی بات نہیں — چیک کرتے رہیں۔</string>
+
 
     <string name="sugg_high_title">🔴 شوگر زیادہ ہے</string>
     <string name="sugg_high">آپ کی شوگر زیادہ ہے۔ پرسکون رہیں، پانی پئیں، اور میٹھا نہ کھائیں۔ کچھ گھنٹوں بعد دوبارہ چیک کریں۔ اگر زیادہ ہی رہے یا طبیعت خراب ہو — شدید پیاس، متلی، یا سانس میں دشواری — تو ڈاکٹر سے رابطہ کریں۔</string>
@@ -436,7 +450,6 @@
     <string name="field_name">نام</string>
     <string name="field_age">عمر</string>
     <string name="field_sex">جنس</string>
-    <string name="field_height">قد (سینٹی میٹر)</string>
     <string name="field_weight">وزن (کلوگرام)</string>
     <string name="field_diabetes_type">ذیابیطس کی قسم</string>
     <string name="field_diagnosis_year">تشخیص کا سال</string>
@@ -525,5 +538,24 @@
     <string name="backup_import_replace">تبدیل کریں</string>
     <string name="backup_cancel">منسوخ</string>
     <string name="backup_import_done">درآمد ہوا: %1$d شوگر، %2$d HbA1c، %3$d ادویات۔</string>
+
+    <!-- Trusted resources -->
+    <string name="resources_title">قابل اعتماد وسائل</string>
+    <string name="resources_intro">یہ معروف صحت کے ادارے اور تحقیقی لائبریریاں ہیں۔ کسی بھی کارڈ پر دبائیں تاکہ اس کی سرکاری ویب سائٹ آپ کے براؤزر میں کھل جائے۔</string>
+    <string name="resources_trusted_heading">قابل اعتماد طبی وسائل</string>
+    <string name="resources_research_heading">طبی تحقیق</string>
+    <string name="resources_research_intro">ان قارئین کے لیے جو بنیادی مطالعات دیکھنا چاہتے ہیں۔ یہ تحقیقی ڈیٹابیس ہیں، جو مریضوں کے بجائے ڈاکٹروں اور محققین کے لیے لکھے گئے ہیں۔</string>
+    <string name="res_cannot_open">لنک نہیں کھل سکا۔ براہ کرم چیک کریں کہ آپ کے پاس براؤزر موجود ہے۔</string>
+    <string name="resources_disclaimer">صرف تعلیمی معلومات۔ یہ مواد آپ کے معالج کے مشورے کا متبادل نہیں ہے۔ یہ ویب سائٹس دوسرے اداروں کی ہیں — گلائیکو اے آئی ان کے مواد پر کنٹرول نہیں رکھتا۔</string>
+
+    <string name="res_idf_desc">ذیابیطس انجمنوں کی عالمی فیڈریشن۔ عالمی رہنمائی اور اعداد و شمار کے لیے مفید۔</string>
+    <string name="res_who_desc">اقوام متحدہ کا ادارہ صحت۔ عالمی معیارات اور صحت عامہ کی رہنمائی شائع کرتا ہے۔</string>
+    <string name="res_ada_desc">وہ معیارات شائع کرتا ہے جو بہت سے ڈاکٹر استعمال کرتے ہیں، اور آسان زبان میں مریضوں کے لیے رہنمائی بھی۔</string>
+    <string name="res_cdc_desc">روزمرہ زندگی میں ذیابیطس کے ساتھ رہنے کے لیے عملی اور آسان رہنمائی۔</string>
+    <string name="res_mayo_desc">بیماریوں، علامات اور علاج کی واضح وضاحت، مریضوں کے لیے لکھی گئی۔</string>
+    <string name="res_pubmed_desc">امریکی نیشنل لائبریری آف میڈیسن کا مفت طبی تحقیقی ڈیٹابیس۔</string>
+    <string name="res_cochrane_desc">منظم جائزے جو بتاتے ہیں کہ کئی مطالعات مل کر کسی علاج کے بارے میں کیا کہتے ہیں۔</string>
+
+    <string name="sugg_slightly_high_3">یہ ریڈنگ اس وقت کے معمول کے ہدف سے زیادہ ہے۔ نگرانی جاری رکھیں اور دیکھیں کہ یہ کم ہوتی ہے یا نہیں — اگر بار بار ایسا ہو تو ڈاکٹر کو بتائیں۔</string>
 
 </resources>

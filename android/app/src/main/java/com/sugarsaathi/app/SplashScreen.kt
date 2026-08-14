@@ -82,20 +82,6 @@ fun SplashScreen(onFinished: () -> Unit) {
 
                 Spacer(modifier = Modifier.height(if (compact) 8.dp else 14.dp))
 
-                // ── Institutional branding ──
-                // Placed above the app name as a sponsorship header. Sized
-                // smaller than the bottom placement so it reads as a credential
-                // line rather than competing with the GlycoAI wordmark below.
-                OrganizationLogos(
-                    minLogoSize = if (compact) 44.dp else 52.dp,
-                    maxLogoSize = if (compact) 54.dp else 68.dp,
-                    // On very short screens the full statement would squeeze
-                    // the wheel to nothing, so fall back to logos + label only.
-                    showNames = showFullNames
-                )
-
-                Spacer(modifier = Modifier.height(if (compact) 18.dp else 28.dp))
-
                 // ── App name ──
                 Text(
                     text = "GlycoAI",
@@ -199,10 +185,24 @@ fun SplashScreen(onFinished: () -> Unit) {
 
                 // ── Footer ──
                 Text(
-                    text = "Made by Ghulam Mustafa",
+                    text = "Made by Engr Ghulam Mustafa",
                     fontSize = 10.sp,
                     color = Color.White.copy(alpha = 0.4f),
                     textAlign = TextAlign.Center
+                )
+
+                Spacer(modifier = Modifier.height(if (compact) 12.dp else 18.dp))
+
+                // ── Institutional branding ──
+                // Moved to the bottom of the splash screen, below the footer,
+                // so it reads as a credential/sponsorship line rather than
+                // competing with the GlycoAI wordmark up top.
+                OrganizationLogos(
+                    minLogoSize = if (compact) 44.dp else 52.dp,
+                    maxLogoSize = if (compact) 54.dp else 68.dp,
+                    // On very short screens the full statement would squeeze
+                    // the wheel to nothing, so fall back to logos + label only.
+                    showNames = showFullNames
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))

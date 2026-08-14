@@ -6,7 +6,7 @@
 
     <string name="i_understand">I Understand</string>
 
-    <string name="developed_in_collaboration">Developed in Collaboration with</string>
+    <string name="developed_in_collaboration">Developed by</string>
     <!-- Login -->
     <string name="login_title">Welcome to GlycoAI</string>
     <string name="login_subtitle">Enter your mobile number to continue</string>
@@ -44,12 +44,14 @@
     <string name="consent_point_doctor">It does not replace your doctor. Always follow the advice they have given you.</string>
     <string name="consent_point_emergency">In an emergency, call 1122 or go to the nearest hospital straight away. Do not wait for an answer here.</string>
     <string name="consent_privacy_title">About your information</string>
-    <string name="consent_privacy_body">Your profile and readings are saved on this phone. When you send a message, it is sent to our secure server and to Anthropic, the company whose AI writes the reply. Please do not share your CNIC, address, or bank details in chat.</string>
+    <string name="consent_privacy_body">Your profile and readings are saved on this device. When you send a message, its sent securely to our cloud server, where AI generates a reply. GlycoAI is an AI-powered assistant designed to support people living with diabetes. It was developed by Engr. Ghulam Mustafa at the PCSIR Laboratories Complex, Karachi. For your safety, please do not share your CNIC, address, or bank details in chat. Note that AI can sometimes generate inaccurate information, so please double-check any important details.</string>
     <string name="consent_checkbox">I have read and understood the above. I understand GlycoAI does not replace my doctor.</string>
     <string name="consent_agree_button">I Agree — Continue</string>
     <string name="chat_disclaimer_footer">GlycoAI gives general education, not medical advice. In an emergency call 1122.</string>
 
     <string name="language_label">زبان</string>
+    <string name="profile_language_display">English / Urdu</string>
+
     <string name="lang_english">English</string>
     <string name="lang_urdu">اردو</string>
     <string name="copied_to_clipboard">✅ Copied to clipboard</string>
@@ -101,6 +103,7 @@
     <string name="none_option">None</string>
     <string name="none_desc">Learning / for someone else</string>
     <string name="start_chatting">Start Chatting! 🚀</string>
+
 
     <!-- Onboarding screens 1, 2 extras -->
     <string name="daily_companion">Your Daily Diabetes Companion</string>
@@ -189,6 +192,9 @@
     <string name="height_cm">Height in cm</string>
     <string name="weight_hint">e.g. 72</string>
     <string name="height_hint">e.g. 168</string>
+    <string name="height_feet">Feet</string>
+    <string name="height_inches">Inches</string>
+
     <string name="smoking_status">Do you smoke?</string>
     <string name="smoke_never">Never</string>
     <string name="smoke_former">Former</string>
@@ -200,6 +206,17 @@
     <string name="med_other">Other</string>
     <string name="enter_medicine_names">Enter medicine name(s)</string>
     <string name="separate_commas_medicine">Separate multiple medicines with commas</string>
+
+
+    <string name="response_concise_desc">Short and direct answers</string>
+    <string name="response_medium_desc">Balanced explanation</string>
+    <string name="response_detailed_desc">Longer with more context</string>
+
+    <!-- Response length -->
+    <string name="response_length_label">Response length</string>
+    <string name="response_concise">Concise</string>
+    <string name="response_medium">Medium</string>
+    <string name="response_detailed">Detailed</string>
 
     <!-- Medications -->
     <string name="meds_title">My Medicines</string>
@@ -371,7 +388,6 @@
     <string name="sugg_slightly_high_title">🟡 A little high</string>
     <string name="sugg_slightly_high_1">Slightly above target — this happens to everyone. Drink some water 💧, and a short walk can help if you feel up to it. 🚶</string>
     <string name="sugg_slightly_high_2">A bit high right now. Stay hydrated, go easy on sugary food and drinks, and keep taking your medicines as prescribed.</string>
-    <string name="sugg_slightly_high_3">This reading is a little above range. Nothing to worry about on its own — keep monitoring and see if it settles.</string>
 
     <string name="sugg_high_title">🔴 High reading</string>
     <string name="sugg_high">Your sugar is high. Stay calm, drink water, and avoid sugary food. Recheck in a couple of hours. If it stays high, or you feel unwell — very thirsty, nauseated, or short of breath — contact your doctor.</string>
@@ -436,7 +452,7 @@
     <string name="field_name">Name</string>
     <string name="field_age">Age</string>
     <string name="field_sex">Gender</string>
-    <string name="field_height">Height (cm)</string>
+    <string name="field_height">Height</string>
     <string name="field_weight">Weight (kg)</string>
     <string name="field_diabetes_type">Diabetes type</string>
     <string name="field_diagnosis_year">Year diagnosed</string>
@@ -526,4 +542,23 @@
     <string name="backup_cancel">Cancel</string>
     <string name="backup_import_done">Imported: %1$d glucose, %2$d HbA1c, %3$d medications.</string>
 
+    <!-- Trusted resources -->
+    <string name="resources_title">Trusted Resources</string>
+    <string name="resources_intro">These are well-known health organisations and research libraries. Tap any card to open its official website in your browser.</string>
+    <string name="resources_trusted_heading">Trusted Medical Resources</string>
+    <string name="resources_research_heading">Clinical Research</string>
+    <string name="resources_research_intro">For readers who want the underlying studies. These are research databases, written for clinicians and researchers rather than patients.</string>
+    <string name="resources_cannot_open">Could not open the link. Please check that you have a browser installed.</string>
+    <string name="res_cannot_open">Could not open the link. Please check that you have a browser installed.</string>
+    <string name="resources_disclaimer">Educational information only. This content does not replace advice from your healthcare professional. These websites are run by other organisations — GlycoAI does not control what they publish.</string>
+
+    <string name="res_idf_desc">A global federation of diabetes associations. Good for worldwide guidance and statistics.</string>
+    <string name="res_who_desc">The United Nations health agency. Publishes global standards and public health guidance.</string>
+    <string name="res_ada_desc">Publishes the Standards of Care used by many doctors, plus plain-language patient guides.</string>
+    <string name="res_cdc_desc">Practical, easy-to-read guidance on living with diabetes day to day.</string>
+    <string name="res_mayo_desc">Clear explanations of conditions, symptoms and treatments, written for patients.</string>
+    <string name="res_pubmed_desc">A free database of medical research papers maintained by the US National Library of Medicine.</string>
+    <string name="res_cochrane_desc">Systematic reviews that summarise what many studies together suggest about a treatment.</string>
+
+    <string name="sugg_slightly_high_3">This reading is above the usual target for this time. Keep monitoring and see whether it settles — mention it to your doctor if it keeps happening.</string>
 </resources>

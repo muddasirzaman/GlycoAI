@@ -50,6 +50,23 @@ fun ProfileSectionEditScreen(
     var height by remember { mutableStateOf(profile.heightCm?.let { trimNum(it) } ?: "") }
     var weight by remember { mutableStateOf(profile.weightKg?.let { trimNum(it) } ?: "") }
 
+    // feet/inches are just a friendlier UI on top of the same "height" cm
+    // string above — buildUpdated() below still reads heightCm from `height`
+    // unchanged, so nothing else in this file needs to know feet/inches exist.
+    var feetText by remember {
+        val cm = profile.heightCm
+        mutableStateOf(if (cm != null && cm > 0) cmToFeetInches(cm).first.toString() else "")
+    }
+    var inchesText by remember {
+        val cm = profile.heightCm
+        mutableStateOf(if (cm != null && cm > 0) cmToFeetInches(cm).second.toString() else "")
+    }
+    fun pushHeight(f: String, i: String) {
+        val feet = f.toIntOrNull()
+        val inches = i.toIntOrNull()
+        height = if (feet == null && inches == null) ""
+        else feetInchesToCm(feet ?: 0, inches ?: 0).toString()
+    }
     var diabetesType by remember { mutableStateOf(profile.diabetesType) }
     var diagnosisYear by remember { mutableStateOf(profile.diagnosisYear ?: "") }
     var glucoseUnit by remember { mutableStateOf(profile.glucoseUnit.ifBlank { "mg/dL" }) }
@@ -153,6 +170,47 @@ fun ProfileSectionEditScreen(
                         SelectableButton(stringResource(R.string.female), sex == "Female") { sex = "Female" }
                         SelectableButton(stringResource(R.string.other), sex == "Other") { sex = "Other" }
                     }
+                    Spacer(Modifier.height(16.dp))
+                    FieldLabel(stringResource(R.string.field_height))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        OutlinedTextField(
+                            value = feetText,
+                            onValueChange = { new ->
+                                val filtered = new.filter { it.isDigit() }.take(1)
+                                feetText = filtered
+                                pushHeight(filtered, inchesText)
+                            },
+                            label = { Text(stringResource(R.string.height_feet)) },
+                            modifier = Modifier.weight(1f),
+                            singleLine = true,
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedTextColor = Color.Black, unfocusedTextColor = Color.Black
+                            )
+                        )
+                        OutlinedTextField(
+                            value = inchesText,
+                            onValueChange = { new ->
+                                val filtered = new.filter { it.isDigit() }.take(2)
+                                inchesText = filtered
+                                pushHeight(feetText, filtered)
+                            },
+                            label = { Text(stringResource(R.string.height_inches)) },
+                            modifier = Modifier.weight(1f),
+                            singleLine = true,
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedTextColor = Color.Black, unfocusedTextColor = Color.Black
+                            )
+                        )
+                    }
+                    Spacer(Modifier.height(16.dp))
+                    LabeledField(
+                        stringResource(R.string.field_weight), weight,
+                        { weight = it.filter { c -> c.isDigit() || c == '.' } }
+                    )
+
                     Spacer(Modifier.height(16.dp))
                     LabeledField(
                         stringResource(R.string.field_height), height,

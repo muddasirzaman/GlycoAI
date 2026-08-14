@@ -37,6 +37,8 @@ object ProfileKeys {
     val DIET_PLAN = stringPreferencesKey("diet_plan")
     val PURPOSE = stringPreferencesKey("purpose")
 
+    val RESPONSE_STYLE = stringPreferencesKey("response_style")
+
     val INSULIN_TYPE = stringPreferencesKey("insulin_type")
     val OTHER_CONDITIONS = stringPreferencesKey("other_conditions")
 
@@ -69,7 +71,7 @@ data class UserProfileData(
     val hba1c: Float? = null,
     val complications: List<String> = emptyList(),
     val language: String = "en",
-    val responseStyle: String = "simple",
+    val responseStyle: String = "medium",
     val glucoseUnit: String = "mg/dL",
     val onboardingDone: Boolean = false,
     val knownFacts: List<String> = emptyList(),
@@ -135,6 +137,7 @@ class ProfileRepository(private val context: Context) {
                 .split("|||").filter { it.isNotEmpty() },
             dietPlan = prefs[ProfileKeys.DIET_PLAN] ?: "",
             purpose = prefs[ProfileKeys.PURPOSE] ?: "patient",
+            responseStyle = prefs[ProfileKeys.RESPONSE_STYLE] ?: "medium",
 
             insulinType = prefs[ProfileKeys.INSULIN_TYPE]?.ifEmpty { null },
             otherConditions = (prefs[ProfileKeys.OTHER_CONDITIONS] ?: "")
@@ -180,6 +183,7 @@ class ProfileRepository(private val context: Context) {
             prefs[ProfileKeys.EMERGENCY_HISTORY] = profile.emergencyHistory.joinToString("|||")
             prefs[ProfileKeys.DIET_PLAN] = profile.dietPlan
             prefs[ProfileKeys.PURPOSE] = profile.purpose
+            prefs[ProfileKeys.RESPONSE_STYLE] = profile.responseStyle
 
             prefs[ProfileKeys.INSULIN_TYPE] = profile.insulinType ?: ""
             prefs[ProfileKeys.OTHER_CONDITIONS] = profile.otherConditions.joinToString("|||")

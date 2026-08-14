@@ -3,6 +3,7 @@ package com.sugarsaathi.app
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -10,6 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
@@ -60,6 +62,44 @@ fun HealthProfileScreen(
     }
     val bmiValue = bmiText?.toFloatOrNull()
 
+    // "height" stays a centimetre string, exactly as before — only the input
+    // widget below changes. Feet/inches are seeded once from that cm value,
+    // so re-opening an existing profile shows the right starting numbers.
+    var feetText by remember {
+        val cm = height.toFloatOrNull()
+        mutableStateOf(if (cm != null && cm > 0) cmToFeetInches(cm).first.toString() else "")
+    }
+    var inchesText by remember {
+        val cm = height.toFloatOrNull()
+        mutableStateOf(if (cm != null && cm > 0) cmToFeetInches(cm).second.toString() else "")
+    }
+    fun pushHeight(f: String, i: String) {
+        val feet = f.toIntOrNull()
+        val inches = i.toIntOrNull()
+        onHeightChange(
+            if (feet == null && inches == null) ""
+            else feetInchesToCm(feet ?: 0, inches ?: 0).toString()
+        )
+    }
+
+    // Digits only, with at most one decimal point - lets someone type a
+    // weight like "72.5" but blocks letters/symbols. Applied via
+    // onValueChange filtering rather than KeyboardType alone, since the
+    // numeric keyboard doesn't stop a pasted or hardware-keyboard string.
+    fun filterDecimal(new: String): String {
+        val sb = StringBuilder()
+        var seenDot = false
+        for (c in new) {
+            if (c.isDigit()) {
+                sb.append(c)
+            } else if (c == '.' && !seenDot) {
+                seenDot = true
+                sb.append(c)
+            }
+        }
+        return sb.toString()
+    }
+
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
@@ -77,25 +117,53 @@ fun HealthProfileScreen(
 
         // ── Physical ──
         SectionLabel(stringResource(R.string.physical_info))
-        OutlinedTextField(
-            value = height,
-            onValueChange = onHeightChange,
-            label = { Text(stringResource(R.string.height_cm)) },
-            placeholder = { Text(stringResource(R.string.height_hint)) },
+        Row(
             modifier = Modifier.fillMaxWidth(),
-            singleLine = true,
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedTextColor = Color.Black, unfocusedTextColor = Color.Black
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            OutlinedTextField(
+                value = feetText,
+                onValueChange = { new ->
+                    val filtered = new.filter { it.isDigit() }.take(1)
+                    feetText = filtered
+                    pushHeight(filtered, inchesText)
+                },
+                label = { Text(stringResource(R.string.height_feet)) },
+                placeholder = { Text("5") },
+                modifier = Modifier.weight(1f),
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedTextColor = Color.Black, unfocusedTextColor = Color.Black
+                )
             )
-        )
+            OutlinedTextField(
+                value = inchesText,
+                onValueChange = { new ->
+                    val filtered = new.filter { it.isDigit() }.take(2)
+                    inchesText = filtered
+                    pushHeight(feetText, filtered)
+                },
+                label = { Text(stringResource(R.string.height_inches)) },
+                placeholder = { Text("7") },
+                modifier = Modifier.weight(1f),
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedTextColor = Color.Black, unfocusedTextColor = Color.Black
+                )
+            )
+        }
         Spacer(Modifier.height(12.dp))
+
         OutlinedTextField(
             value = weight,
-            onValueChange = onWeightChange,
+            onValueChange = { new -> onWeightChange(filterDecimal(new).take(6)) },
             label = { Text(stringResource(R.string.weight_kg)) },
             placeholder = { Text(stringResource(R.string.weight_hint)) },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
             colors = OutlinedTextFieldDefaults.colors(
                 focusedTextColor = Color.Black, unfocusedTextColor = Color.Black
             )
@@ -278,10 +346,11 @@ fun HealthProfileScreen(
         Spacer(Modifier.height(12.dp))
         OutlinedTextField(
             value = doctorPhone,
-            onValueChange = onDoctorPhoneChange,
+            onValueChange = { new -> onDoctorPhoneChange(new.filter { it.isDigit() || it == '+' || it == ' ' || it == '-' }) },
             label = { Text("Doctor's phone (optional)") },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
             colors = OutlinedTextFieldDefaults.colors(
                 focusedTextColor = Color.Black, unfocusedTextColor = Color.Black
             )
@@ -311,10 +380,11 @@ fun HealthProfileScreen(
         Spacer(Modifier.height(12.dp))
         OutlinedTextField(
             value = emergencyContactPhone,
-            onValueChange = onEmergencyContactPhoneChange,
+            onValueChange = { new -> onEmergencyContactPhoneChange(new.filter { it.isDigit() || it == '+' || it == ' ' || it == '-' }) },
             label = { Text("Contact phone (optional)") },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
             colors = OutlinedTextFieldDefaults.colors(
                 focusedTextColor = Color.Black, unfocusedTextColor = Color.Black
             )

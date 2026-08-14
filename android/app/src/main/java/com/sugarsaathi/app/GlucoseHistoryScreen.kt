@@ -151,7 +151,9 @@ fun GlucoseHistoryScreen(
 
                 item {
                     latest?.let { r ->
-                        SuggestionCard(suggestionFor(r.value, r.unit, r.timestamp))
+                        SuggestionCard(
+                            suggestionFor(r.value, r.unit, r.timestamp, r.readingType)
+                        )
                     }
                 }
 

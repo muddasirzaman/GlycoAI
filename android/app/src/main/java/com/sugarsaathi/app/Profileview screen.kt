@@ -51,7 +51,8 @@ fun ProfileViewScreen(
     onEditSection: (ProfileSection) -> Unit,
     onOpenMedications: () -> Unit,
     onOpenHba1cHistory: () -> Unit,
-    onOpenBackup: () -> Unit
+    onOpenBackup: () -> Unit,
+    onOpenResources: () -> Unit
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
 
@@ -94,7 +95,10 @@ fun ProfileViewScreen(
                 InfoRow(stringResource(R.string.field_sex), profile.sex.ifBlank { null })
                 InfoRow(
                     stringResource(R.string.field_height),
-                    profile.heightCm?.let { "${trimNumber(it)} cm" }
+                    profile.heightCm?.let { cm ->
+                        val (ft, inch) = cmToFeetInches(cm)
+                        "$ft ft $inch in"
+                    }
                 )
                 InfoRow(
                     stringResource(R.string.field_weight),
@@ -225,6 +229,14 @@ fun ProfileViewScreen(
                 colors = ButtonDefaults.outlinedButtonColors(contentColor = TealGreen),
                 border = androidx.compose.foundation.BorderStroke(1.dp, TealGreen)
             ) { Text(stringResource(R.string.backup_title)) }
+
+            Spacer(Modifier.height(10.dp))
+            OutlinedButton(
+                onClick = onOpenResources,
+                modifier = Modifier.fillMaxWidth().height(50.dp),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = TealGreen),
+                border = androidx.compose.foundation.BorderStroke(1.dp, TealGreen)
+            ) { Text(stringResource(R.string.resources_title)) }
         }
     }
 }

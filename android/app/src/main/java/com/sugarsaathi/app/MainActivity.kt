@@ -100,7 +100,7 @@ class MainActivity : ComponentActivity() {
                 var editingReminder by remember { mutableStateOf<Reminder?>(null) }
                 var addingReminder by remember { mutableStateOf(false) }
                 val reminderViewModel: ReminderViewModel = viewModel()
-
+                var showResources by remember { mutableStateOf(false) }
                 // Structured medications. Same shape as the reminder state above:
                 // showMedications drives the list; editing/adding drive the form
                 // that sits on top of it so Back returns to the list.
@@ -263,11 +263,19 @@ class MainActivity : ComponentActivity() {
                         BackupScreen(onBack = { showBackup = false })
                     }
 
+                    showResources -> {
+                        ResourcesScreen(onBack = { showResources = false })
+                    }
+
                     showProfileView -> {
                         ProfileViewScreen(
                             profile = profile!!,
                             onBack = { showProfileView = false },
                             onEditSection = { editingSection = it },
+                            onOpenResources = {
+                                showProfileView = false
+                                showResources = true
+                            },
                             onOpenMedications = {
                                 showProfileView = false
                                 showMedications = true
@@ -284,6 +292,10 @@ class MainActivity : ComponentActivity() {
                                 showProfileView = false
                                 showBackup = true
                             }
+
+
+
+
                         )
                     }
 

@@ -21,6 +21,7 @@ import android.content.res.Configuration
 import java.util.Locale
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.foundation.layout.imePadding
 
 // Brands in the medication list that are insulins. Selecting any of these
 // means the insulin-type question is relevant even for type 2.
@@ -36,7 +37,7 @@ private const val TOTAL_ONBOARDING_STEPS = 6
 @Composable
 fun OnboardingScreen(onComplete: (UserProfileData) -> Unit) {
 
-    var currentScreen by remember { mutableIntStateOf(1) }
+    var currentScreen by remember { mutableIntStateOf(2) }
     var name by remember { mutableStateOf("") }
     var age by remember { mutableStateOf("") }
     var sex by remember { mutableStateOf("") }
@@ -44,7 +45,8 @@ fun OnboardingScreen(onComplete: (UserProfileData) -> Unit) {
     var hba1c by remember { mutableStateOf("") }
     var glucoseUnit by remember { mutableStateOf("mg/dL") }
     var diabetesType by remember { mutableStateOf("") }
-    var language by remember { mutableStateOf("en") }
+    val localeContext = LocalContext.current
+    var language by remember { mutableStateOf(LocaleHelper.savedLanguage(localeContext)) }
     var selectedMeds by remember { mutableStateOf(setOf<String>()) }
     var otherMedicine by remember { mutableStateOf("") }
     var complicationText by remember { mutableStateOf("") }
@@ -90,11 +92,8 @@ fun OnboardingScreen(onComplete: (UserProfileData) -> Unit) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                // Onboarding renders outside the Scaffold, so with
-                // enableEdgeToEdge() it gets no automatic insets. Without this
-                // the progress text slides under the clock and the bottom
-                // content under the gesture bar.
                 .systemBarsPadding()
+                .imePadding()
                 .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -127,18 +126,12 @@ fun OnboardingScreen(onComplete: (UserProfileData) -> Unit) {
 
             when (currentScreen) {
 
-                1 -> Screen1Language(
-                    selectedLanguage = language,
-                    onLanguageSelected = { language = it },
-                    onNext = { currentScreen = 2 }
-                )
-
                 // Consent sits after language so it is read in the user's own
                 // language, and before any medical question so nothing personal
                 // is collected before they know what this app is.
                 2 -> ConsentScreen(
                     onAccept = { currentScreen = 3 },
-                    onBack = { currentScreen = 1 }
+                    onBack = { }
                 )
 
                 3 -> PurposeScreen(
@@ -366,70 +359,6 @@ fun OnboardingScreen(onComplete: (UserProfileData) -> Unit) {
                 )
             }
         }
-    }
-}
-
-
-// ─── Screen 1: Language ───────────────────────────────
-
-@Composable
-fun Screen1Language(
-    selectedLanguage: String,
-    onLanguageSelected: (String) -> Unit,
-    onNext: () -> Unit
-) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.fillMaxSize()
-    ) {
-        Text("👋", fontSize = 48.sp)
-        Spacer(modifier = Modifier.height(16.dp))
-        Text(
-            text = stringResource(R.string.onboarding_welcome_title),
-            fontSize = 24.sp,
-            fontWeight = FontWeight.Bold,
-            textAlign = TextAlign.Center
-        )
-        Text(
-            text = stringResource(R.string.daily_companion),
-            fontSize = 18.sp,
-            color = Color.Gray,
-            textAlign = TextAlign.Center
-        )
-        Spacer(modifier = Modifier.height(32.dp))
-        Text(
-            text = stringResource(R.string.select_language),
-            fontSize = 16.sp,
-            fontWeight = FontWeight.Medium
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-
-        SelectableButton(
-            text = stringResource(R.string.english),
-            isSelected = selectedLanguage == "en",
-            onClick = { onLanguageSelected("en") }
-        )
-        Spacer(modifier = Modifier.height(12.dp))
-        SelectableButton(
-            text = "اردو",
-            isSelected = selectedLanguage == "ur",
-            onClick = { onLanguageSelected("ur") }
-        )
-
-        Spacer(modifier = Modifier.height(32.dp))
-        Button(
-            onClick = onNext,
-            modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(containerColor = TealGreen)
-        ) {
-            Text(stringResource(R.string.next_button), fontSize = 16.sp)
-        }
-
-        // Push institutional branding to the bottom so it never competes with
-        // the app name or the primary action above it.
-        Spacer(modifier = Modifier.weight(1f))
-        Spacer(modifier = Modifier.height(24.dp))
-        OrganizationLogos()
     }
 }
 

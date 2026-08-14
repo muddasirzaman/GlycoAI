@@ -54,7 +54,9 @@ fun AddReadingScreen(
     )
 
     Column(
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier
+            .fillMaxSize()
+            .imePadding()
     ) {
 
         TopAppBar(
@@ -281,7 +283,8 @@ fun AddReadingScreen(
         val suggestion = suggestionFor(
             urgentValue,
             defaultUnit,
-            seed = System.currentTimeMillis()
+            seed = System.currentTimeMillis(),
+            readingType = readingType
         )
 
         AlertDialog(

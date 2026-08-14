@@ -61,6 +61,7 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import kotlinx.coroutines.launch
 
 val TealGreen = Color(0xFF1D9E75)
 
@@ -88,6 +89,16 @@ fun ChatScreen(
     var selectedDocMime by remember { mutableStateOf<String?>(null) }
     var tts by remember { mutableStateOf<TextToSpeech?>(null) }
 
+    // Response style — local state for instant chip update, persisted to
+    // DataStore so it survives restarts. Sent with every message via
+    // profile.copy(responseStyle = ...).
+    val profileRepo = remember { ProfileRepository(context) }
+    val scope = rememberCoroutineScope()
+    var responseStyle by remember {
+        mutableStateOf(userProfile.responseStyle.ifBlank { "medium" })
+    }
+    var showStyleMenu by remember { mutableStateOf(false) }
+
     LaunchedEffect(Unit) {
         chatViewModel.initHistory(context)
         tts = TextToSpeech(context) { status ->
@@ -105,6 +116,8 @@ fun ChatScreen(
         }
     }
 
+    fun profileWithStyle() = userProfile.copy(responseStyle = responseStyle)
+
     fun sendMessage() {
         val text = inputText.trim()
         if (text.isNotEmpty() || selectedImageBase64 != null || selectedDocBase64 != null) {
@@ -115,7 +128,7 @@ fun ChatScreen(
             inputText = ""
             chatViewModel.sendMessage(
                 userText = messageText,
-                profile = userProfile,
+                profile = profileWithStyle(),
                 glucoseSummary = glucoseViewModel?.glucoseSummaryForAI(),
                 imageBase64 = selectedImageBase64,
                 imageMimeType = selectedImageMime,
@@ -143,7 +156,7 @@ fun ChatScreen(
             if (spokenText.isNotEmpty()) {
                 chatViewModel.sendMessage(
                     spokenText,
-                    userProfile,
+                    profileWithStyle(),
                     glucoseViewModel?.glucoseSummaryForAI()
                 )
             }
@@ -241,6 +254,13 @@ fun ChatScreen(
         }
     }
 
+    // Helper for the style label shown in the TopAppBar pill.
+    val styleLabel = when (responseStyle) {
+        "concise" -> stringResource(R.string.response_concise)
+        "detailed" -> stringResource(R.string.response_detailed)
+        else -> stringResource(R.string.response_medium)
+    }
+
     Column(
         modifier = Modifier.fillMaxSize()
         // NOTE: no keyboard or navigation-bar padding here on purpose.
@@ -263,6 +283,85 @@ fun ChatScreen(
                 }
             },
             actions = {
+                // Response style pill — compact dropdown like Claude.ai.
+                // Shows the current style name; tapping opens a menu with
+                // all three options and a one-line description of each.
+                Box {
+                    Surface(
+                        onClick = { showStyleMenu = true },
+                        shape = RoundedCornerShape(16.dp),
+                        color = Color.White.copy(alpha = 0.2f),
+                        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.4f))
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                styleLabel,
+                                fontSize = 12.sp,
+                                color = Color.White,
+                                fontWeight = FontWeight.Medium
+                            )
+                            Spacer(Modifier.width(2.dp))
+                            Icon(
+                                Icons.Default.KeyboardArrowDown,
+                                contentDescription = null,
+                                tint = Color.White,
+                                modifier = Modifier.size(14.dp)
+                            )
+                        }
+                    }
+
+                    DropdownMenu(
+                        expanded = showStyleMenu,
+                        onDismissRequest = { showStyleMenu = false }
+                    ) {
+                        StyleMenuItem(
+                            title = stringResource(R.string.response_concise),
+                            desc = stringResource(R.string.response_concise_desc),
+                            selected = responseStyle == "concise",
+                            onClick = {
+                                responseStyle = "concise"
+                                showStyleMenu = false
+                                scope.launch {
+                                    profileRepo.saveProfile(
+                                        userProfile.copy(responseStyle = "concise")
+                                    )
+                                }
+                            }
+                        )
+                        StyleMenuItem(
+                            title = stringResource(R.string.response_medium),
+                            desc = stringResource(R.string.response_medium_desc),
+                            selected = responseStyle == "medium",
+                            onClick = {
+                                responseStyle = "medium"
+                                showStyleMenu = false
+                                scope.launch {
+                                    profileRepo.saveProfile(
+                                        userProfile.copy(responseStyle = "medium")
+                                    )
+                                }
+                            }
+                        )
+                        StyleMenuItem(
+                            title = stringResource(R.string.response_detailed),
+                            desc = stringResource(R.string.response_detailed_desc),
+                            selected = responseStyle == "detailed",
+                            onClick = {
+                                responseStyle = "detailed"
+                                showStyleMenu = false
+                                scope.launch {
+                                    profileRepo.saveProfile(
+                                        userProfile.copy(responseStyle = "detailed")
+                                    )
+                                }
+                            }
+                        )
+                    }
+                }
+
                 IconButton(onClick = onHistoryClick) {
                     Icon(
                         imageVector = Icons.Default.History,
@@ -456,7 +555,7 @@ fun ChatScreen(
                     inputText = ""
                     chatViewModel.sendMessage(
                         userText = reply,
-                        profile = userProfile,
+                        profile = profileWithStyle(),
                         glucoseSummary = glucoseViewModel?.glucoseSummaryForAI()
                     )
                 }
@@ -467,7 +566,7 @@ fun ChatScreen(
         Row(
             modifier = Modifier
                 .padding(horizontal = 12.dp)
-                .padding(bottom = 8.dp)
+                .padding(bottom = 4.dp)
                 .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -475,12 +574,13 @@ fun ChatScreen(
             FloatingActionButton(
                 onClick = { expanded = !expanded },
                 containerColor = if (expanded) Color.Gray else Color(0xFF555555),
-                modifier = Modifier.size(46.dp)
+                modifier = Modifier.size(42.dp)
             ) {
                 Icon(
                     imageVector = if (expanded) Icons.Default.Close else Icons.Default.Add,
                     contentDescription = "More",
-                    tint = Color.White
+                    tint = Color.White,
+                    modifier = Modifier.size(20.dp)
                 )
             }
 
@@ -490,14 +590,14 @@ fun ChatScreen(
                 value = inputText,
                 onValueChange = { inputText = it },
                 placeholder = {
-                    Text(stringResource(R.string.type_question), fontSize = 15.sp)
+                    Text(stringResource(R.string.type_question), fontSize = 14.sp)
                 },
                 modifier = Modifier
                     .weight(1f)
-                    .heightIn(min = 52.dp),
+                    .heightIn(min = 46.dp),
                 textStyle = LocalTextStyle.current.copy(
-                    fontSize = 15.sp,
-                    lineHeight = 20.sp
+                    fontSize = 14.sp,
+                    lineHeight = 18.sp
                 ),
                 shape = RoundedCornerShape(24.dp),
                 maxLines = 3,
@@ -514,12 +614,13 @@ fun ChatScreen(
             FloatingActionButton(
                 onClick = { sendMessage() },
                 containerColor = TealGreen,
-                modifier = Modifier.size(46.dp)
+                modifier = Modifier.size(42.dp)
             ) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.Send,
                     contentDescription = "Send",
-                    tint = Color.White
+                    tint = Color.White,
+                    modifier = Modifier.size(18.dp)
                 )
             }
         }
@@ -528,16 +629,58 @@ fun ChatScreen(
         // someone is actually asking about their medication.
         Text(
             text = stringResource(R.string.chat_disclaimer_footer),
-            fontSize = 10.sp,
+            fontSize = 9.sp,
             color = Color.Gray,
-            lineHeight = 13.sp,
+            lineHeight = 12.sp,
             textAlign = TextAlign.Center,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 20.dp)
-                .padding(bottom = 6.dp)
+                .padding(bottom = 4.dp)
         )
     }
+}
+
+/**
+ * A single menu item in the response-style dropdown. Shows the style name
+ * with a one-line description and a checkmark when selected. Matches the
+ * feel of Claude.ai's style picker.
+ */
+@Composable
+private fun StyleMenuItem(
+    title: String,
+    desc: String,
+    selected: Boolean,
+    onClick: () -> Unit
+) {
+    DropdownMenuItem(
+        text = {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        title,
+                        fontSize = 14.sp,
+                        fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+                        color = if (selected) TealGreen else Color.Black
+                    )
+                    Text(
+                        desc,
+                        fontSize = 11.sp,
+                        color = Color.Gray,
+                        lineHeight = 14.sp
+                    )
+                }
+                if (selected) {
+                    Spacer(Modifier.width(8.dp))
+                    Text("✓", color = TealGreen, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                }
+            }
+        },
+        onClick = onClick
+    )
 }
 
 /**
@@ -557,7 +700,7 @@ fun QuickReplyRow(
             .fillMaxWidth()
             .horizontalScroll(rememberScrollState())
             .padding(horizontal = 12.dp)
-            .padding(bottom = 8.dp),
+            .padding(bottom = 6.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         replies.forEach { reply ->

@@ -208,7 +208,7 @@ fun ProfileTabPlaceholder(
         Spacer(Modifier.height(24.dp))
 
         // Language toggle
-        Text(stringResource(R.string.language_label), fontWeight = FontWeight.Bold)
+        Text(stringResource(R.string.profile_language_display), fontWeight = FontWeight.Bold)
         Spacer(Modifier.height(8.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             LanguageChip(
@@ -227,9 +227,11 @@ fun ProfileTabPlaceholder(
             )
         }
 
+
         Spacer(Modifier.height(24.dp))
         Button(
             onClick = onEditProfile,
+
             colors = ButtonDefaults.buttonColors(containerColor = TealGreen)
         ) { Text(stringResource(R.string.edit_my_information)) }
 
